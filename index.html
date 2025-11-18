@@ -147,54 +147,71 @@
 
                     <!-- Data Tab -->
                     <div class="tab-content" id="data-tab">
-                        <div id="data-empty-state" class="empty-state">
-                            <div class="empty-state-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <p>Select a Sentinel satellite to choose a date range</p>
-                        </div>
-                        
-                        <div id="data-selection-content" style="display: none;">
-                            <div class="sentinel-selection-info">
-                                <div class="sentinel-info-badge" id="selected-sentinel-badge">
-                                    <span>Sentinel <span id="selected-sentinel-number"></span></span>
+                        <div id="data-selection-content" style="position: relative;">
+                            <div class="date-range-summary" id="date-range-summary">
+                                <div class="date-range-display-compact">
+                                    <span class="date-range-label-compact">Range:</span>
+                                    <div class="date-inputs-wrapper">
+                                        <input type="text" class="date-input" id="start-date-input" placeholder="dd/mm/yyyy" />
+                                        <span class="date-separator">to</span>
+                                        <input type="text" class="date-input" id="end-date-input" placeholder="dd/mm/yyyy" />
+                                        <button class="calendar-icon-btn" id="data-range-calendar-btn" title="Select date range">
+                                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="date-range-summary" id="date-range-summary" style="margin-top: 1rem;">
-                                <div class="date-range-display">
-                                    <span class="date-range-label">Selected Range:</span>
-                                    <span class="date-range-value" id="date-range-value">No dates selected</span>
+                            <!-- Data Tab Calendar Popup -->
+                            <div class="compact-calendar" id="data-tab-calendar" style="display: none;">
+                                <div class="compact-calendar-header">
+                                    <button class="compact-calendar-nav-btn" id="data-calendar-prev">
+                                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                    </button>
+                                    <span class="compact-calendar-month-year" id="data-calendar-month-year"></span>
+                                    <button class="compact-calendar-nav-btn" id="data-calendar-next">
+                                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
                                 </div>
+                                <div class="compact-calendar-weekdays" id="data-calendar-weekdays"></div>
+                                <div class="compact-calendar-days" id="data-calendar-days"></div>
                             </div>
                             
                             <!-- Mock Visualizations -->
                             <div id="mock-visualizations" style="display: none; margin-top: 1.5rem;">
-                                        <!-- Climate Risk Level Indicator -->
-                                        <div class="visualization-card">
-                                            <div class="viz-header">
-                                                <h4>Climate Risk Level</h4>
-                                            </div>
-                                            <div class="climate-risk-indicator">
-                                                <div class="risk-level" id="risk-level">
-                                                    <span class="risk-label">HIGH</span>
-                                                    <span class="risk-value">7.8</span>
-                                                </div>
-                                                <div class="risk-scale">
-                                                    <div class="risk-bar">
-                                                        <div class="risk-fill" id="risk-fill" style="width: 78%;"></div>
-                                                    </div>
-                                                    <div class="risk-labels">
-                                                        <span>Low</span>
-                                                        <span>Medium</span>
-                                                        <span>High</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
+                                <!-- Small Climate Risk Level at Top -->
+                                <div class="climate-risk-compact" id="climate-risk-compact">
+                                    <div class="risk-compact-header">
+                                        <span class="risk-compact-label">Climate Risk Level</span>
+                                        <span class="risk-compact-value">HIGH 7.8</span>
+                                    </div>
+                                    <div class="risk-compact-bar">
+                                        <div class="risk-compact-fill" id="risk-compact-fill" style="width: 78%;"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sub-tabs -->
+                                <div class="sub-tabs-container">
+                                    <div class="sub-tabs-list">
+                                        <button class="sub-tab-trigger active" data-subtab="social">
+                                            <span>Social</span>
+                                        </button>
+                                        <button class="sub-tab-trigger" data-subtab="economical">
+                                            <span>Economical</span>
+                                        </button>
+                                        <button class="sub-tab-trigger" data-subtab="environmental">
+                                            <span>Environmental</span>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Social Sub-tab -->
+                                    <div class="sub-tab-content active" id="subtab-social">
                                         <!-- Tourist Histogram -->
                                         <div class="visualization-card">
                                             <div class="viz-header">
@@ -208,6 +225,25 @@
                                             </div>
                                         </div>
                                         
+                                        <!-- Add more social visualizations here -->
+                                    </div>
+                                    
+                                    <!-- Economical Sub-tab -->
+                                    <div class="sub-tab-content" id="subtab-economical">
+                                        <!-- Add economical visualizations here -->
+                                        <div class="visualization-card">
+                                            <div class="viz-header">
+                                                <h4>Economic Impact</h4>
+                                                <span class="viz-subtitle">Economic indicators over selected period</span>
+                                            </div>
+                                            <div class="placeholder-viz">
+                                                <p>Economic data visualizations will appear here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Environmental Sub-tab -->
+                                    <div class="sub-tab-content" id="subtab-environmental">
                                         <!-- Sea Level & Temperature Line Plot -->
                                         <div class="visualization-card">
                                             <div class="viz-header">
@@ -230,7 +266,11 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        
+                                        <!-- Add more environmental visualizations here -->
                                     </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -299,16 +339,6 @@
                 </div>
                 <div class="compact-calendar-weekdays" id="compact-calendar-weekdays"></div>
                 <div class="compact-calendar-days" id="compact-calendar-days"></div>
-                <div class="compact-calendar-range-info" id="compact-calendar-range-info">
-                    <div class="range-info-item">
-                        <span class="range-info-label">Start:</span>
-                        <span class="range-info-value" id="range-start-value">-</span>
-                    </div>
-                    <div class="range-info-item">
-                        <span class="range-info-label">End:</span>
-                        <span class="range-info-value" id="range-end-value">-</span>
-                    </div>
-                </div>
             </div>
             
             <!-- Product Selector Modal -->

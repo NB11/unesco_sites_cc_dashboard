@@ -641,6 +641,25 @@ document.querySelectorAll('.tab-trigger').forEach(trigger => {
         
         trigger.classList.add('active');
         document.getElementById(`${tabName}-tab`).classList.add('active');
+        
+        // Set up edit date range button if switching to Data tab
+        if (tabName === 'data') {
+            // Show calendar when Data tab is active
+            const compactCalendar = document.getElementById('compact-calendar');
+            if (compactCalendar) {
+                compactCalendar.style.display = 'block';
+            }
+            renderCompactCalendar();
+            setupDateInputs();
+            setupDataTabCalendar();
+            updateDateRangeSummary();
+        } else {
+            // Hide calendar when switching away from Data tab (unless Sentinel is selected)
+            const compactCalendar = document.getElementById('compact-calendar');
+            if (compactCalendar && !selectedSentinel) {
+                compactCalendar.style.display = 'none';
+            }
+        }
     });
 });
 
@@ -698,31 +717,37 @@ function switchToDataTab(sentinelType) {
         dataTab.classList.add('active');
     }
     
-    // Update UI
-    const emptyState = document.getElementById('data-empty-state');
-    const selectionContent = document.getElementById('data-selection-content');
-    const sentinelNumber = document.getElementById('selected-sentinel-number');
-    
-    if (emptyState) emptyState.style.display = 'none';
-    if (selectionContent) selectionContent.style.display = 'block';
-    if (sentinelNumber) sentinelNumber.textContent = sentinelType;
-    
     // Render compact calendar
     renderCompactCalendar();
     updateDateRangeSummary();
     
     // If dates are already selected, show product selector
-    if (selectedStartDate && selectedEndDate) {
+    if (selectedStartDate && selectedEndDate && selectedSentinel) {
         showProductSelector();
     }
+    
+    // Set up date inputs and calendar button
+    setupDateInputs();
+    setupDataTabCalendar();
 }
 
+
 function renderCompactCalendar() {
+    // Show calendar if Sentinel is selected, or if we're in Data tab
+    const dataTab = document.getElementById('data-tab');
+    const isDataTabActive = dataTab && dataTab.classList.contains('active');
+    
     const monthYearEl = document.getElementById('compact-calendar-month-year');
     const weekdaysEl = document.getElementById('compact-calendar-weekdays');
     const daysEl = document.getElementById('compact-calendar-days');
     
     if (!monthYearEl || !weekdaysEl || !daysEl) return;
+    
+    // Show calendar if Sentinel is selected or if Data tab is active
+    const compactCalendar = document.getElementById('compact-calendar');
+    if (compactCalendar && (selectedSentinel || isDataTabActive)) {
+        compactCalendar.style.display = 'block';
+    }
     
     const year = currentStartCalendarDate.getFullYear();
     const month = currentStartCalendarDate.getMonth();
@@ -755,19 +780,23 @@ function renderCompactCalendar() {
                year === today.getFullYear();
     };
     
+    // Compact calendar (right side) shows Sentinel dates
+    const startDate = selectedStartDate;
+    const endDate = selectedEndDate;
+    
     // Check if date is in selected range
     const isInRange = (day) => {
-        if (!selectedStartDate || !selectedEndDate) return false;
+        if (!startDate || !endDate) return false;
         const date = new Date(year, month, day);
-        return date >= selectedStartDate && date <= selectedEndDate;
+        return date >= startDate && date <= endDate;
     };
     
     // Check if date is selected (start or end)
     const isSelected = (day) => {
-        if (!selectedStartDate && !selectedEndDate) return false;
+        if (!startDate && !endDate) return false;
         const date = new Date(year, month, day);
-        if (selectedStartDate && date.getTime() === selectedStartDate.getTime()) return true;
-        if (selectedEndDate && date.getTime() === selectedEndDate.getTime()) return true;
+        if (startDate && date.getTime() === startDate.getTime()) return true;
+        if (endDate && date.getTime() === endDate.getTime()) return true;
         return false;
     };
     
@@ -822,6 +851,7 @@ function renderCompactCalendar() {
             const selectedYear = parseInt(dayEl.dataset.year);
             const clickedDate = new Date(selectedYear, selectedMonth, day);
             
+            // Compact calendar (right side) - updates Sentinel dates only
             // If no dates selected, set as start
             if (!selectedStartDate && !selectedEndDate) {
                 selectedStartDate = clickedDate;
@@ -843,47 +873,588 @@ function renderCompactCalendar() {
             }
             
             renderCompactCalendar();
-            updateDateRangeSummary();
+            
+            // Show product selector when both Sentinel dates and Sentinel are selected
+            if (selectedStartDate && selectedEndDate && selectedSentinel) {
+                showProductSelector();
+            } else {
+                hideProductSelector();
+            }
         });
     });
 }
 
+// Independent date range for Data tab plots
+let independentStartDate = null;
+let independentEndDate = null;
+
 function updateDateRangeSummary() {
-    const value = document.getElementById('date-range-value');
-    const rangeStartValue = document.getElementById('range-start-value');
-    const rangeEndValue = document.getElementById('range-end-value');
+    const startInput = document.getElementById('start-date-input');
+    const endInput = document.getElementById('end-date-input');
     const mockViz = document.getElementById('mock-visualizations');
     
-    if (selectedStartDate && selectedEndDate) {
-        const startStr = selectedStartDate.toISOString().split('T')[0];
-        const endStr = selectedEndDate.toISOString().split('T')[0];
-        if (value) value.textContent = `${startStr} to ${endStr}`;
-        if (rangeStartValue) rangeStartValue.textContent = startStr;
-        if (rangeEndValue) rangeEndValue.textContent = endStr;
+    // Always use independent dates for the Data tab (disconnected from Sentinel unless coupled)
+    const startDate = independentStartDate;
+    const endDate = independentEndDate;
+    
+    if (startDate && endDate) {
+        const startStr = formatDateForInput(startDate);
+        const endStr = formatDateForInput(endDate);
+        
+        if (startInput) startInput.value = startStr;
+        if (endInput) endInput.value = endStr;
+        
+        // Show visualizations based on independent dates (for plots)
         if (mockViz) {
             mockViz.style.display = 'block';
             renderMockVisualizations();
         }
-        // Show product selector when both dates and Sentinel are selected
-        if (selectedSentinel) {
-            showProductSelector();
-        }
-        console.log('Date range selected:', startStr, 'to', endStr, 'for Sentinel', selectedSentinel);
-    } else if (selectedStartDate) {
-        const startStr = selectedStartDate.toISOString().split('T')[0];
-        if (value) value.textContent = `Start: ${startStr} (select end date)`;
-        if (rangeStartValue) rangeStartValue.textContent = startStr;
-        if (rangeEndValue) rangeEndValue.textContent = '-';
+        // Product selector is controlled by Sentinel calendar dates, not Data tab dates
+        // So we don't show it here
+        console.log('Date range selected:', startStr, 'to', endStr, 'for plots');
+    } else if (startDate) {
+        const startStr = formatDateForInput(startDate);
+        if (startInput) startInput.value = startStr;
+        if (endInput) endInput.value = '';
         if (mockViz) mockViz.style.display = 'none';
         hideProductSelector();
     } else {
-        if (value) value.textContent = 'No dates selected';
-        if (rangeStartValue) rangeStartValue.textContent = '-';
-        if (rangeEndValue) rangeEndValue.textContent = '-';
+        if (startInput) startInput.value = '';
+        if (endInput) endInput.value = '';
         if (mockViz) mockViz.style.display = 'none';
         hideProductSelector();
     }
+    
+    // Set up date inputs and calendar button if in Data tab
+    const dataTab = document.getElementById('data-tab');
+    if (dataTab && dataTab.classList.contains('active')) {
+        setupDateInputs();
+        setupDataTabCalendar();
+    }
 }
+
+function formatDateForInput(date) {
+    if (!date) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+function parseDateInput(dateStr) {
+    if (!dateStr || !dateStr.trim()) return null;
+    // Parse dd/mm/yyyy format
+    const parts = dateStr.trim().split('/');
+    if (parts.length !== 3) return null;
+    
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+    const year = parseInt(parts[2], 10);
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+    
+    const date = new Date(year, month, day);
+    // Validate date
+    if (date.getDate() !== day || date.getMonth() !== month || date.getFullYear() !== year) {
+        return null;
+    }
+    return date;
+}
+
+function setupDateInputs() {
+    const startInput = document.getElementById('start-date-input');
+    const endInput = document.getElementById('end-date-input');
+    
+    if (startInput) {
+        // Remove existing listeners
+        const newStartInput = startInput.cloneNode(true);
+        startInput.parentNode.replaceChild(newStartInput, startInput);
+        
+        newStartInput.addEventListener('blur', () => {
+            const date = parseDateInput(newStartInput.value);
+            if (date) {
+                independentStartDate = date;
+                updateDateRangeSummary();
+            } else if (newStartInput.value.trim() === '') {
+                independentStartDate = null;
+                updateDateRangeSummary();
+            }
+        });
+    }
+    
+    if (endInput) {
+        // Remove existing listeners
+        const newEndInput = endInput.cloneNode(true);
+        endInput.parentNode.replaceChild(newEndInput, endInput);
+        
+        newEndInput.addEventListener('blur', () => {
+            const date = parseDateInput(newEndInput.value);
+            if (date) {
+                independentEndDate = date;
+                updateDateRangeSummary();
+            } else if (newEndInput.value.trim() === '') {
+                independentEndDate = null;
+                updateDateRangeSummary();
+            }
+        });
+    }
+}
+
+function setupDataTabCalendar() {
+    console.log('=== setupDataTabCalendar called ===');
+    const dataCalendarBtn = document.getElementById('data-range-calendar-btn');
+    
+    console.log('Button element:', dataCalendarBtn);
+    
+    if (!dataCalendarBtn) {
+        console.error('ERROR: data-range-calendar-btn not found in DOM!');
+        return;
+    }
+    
+    // Remove ALL existing event listeners by cloning
+    const newBtn = dataCalendarBtn.cloneNode(true);
+    dataCalendarBtn.parentNode.replaceChild(newBtn, dataCalendarBtn);
+    
+    // Add click listener
+    newBtn.addEventListener('click', function(e) {
+        console.log('=== CALENDAR BUTTON CLICKED ===');
+        e.stopPropagation();
+        e.preventDefault();
+        toggleDataTabCalendar();
+    });
+    
+    console.log('Event listener attached successfully to button');
+}
+
+// Data tab calendar state
+let currentDataCalendarDate = new Date();
+
+function toggleDataTabCalendar() {
+    const calendar = document.getElementById('data-tab-calendar');
+    console.log('toggleDataTabCalendar called, calendar element found:', !!calendar);
+    
+    if (!calendar) {
+        console.error('Data tab calendar element not found! Check if element with id "data-tab-calendar" exists in HTML');
+        return;
+    }
+    
+    const currentDisplay = calendar.style.display || window.getComputedStyle(calendar).display;
+    const isVisible = currentDisplay === 'block' || currentDisplay === 'flex';
+    
+    console.log('Calendar current display:', currentDisplay, 'isVisible:', isVisible);
+    
+    if (!isVisible) {
+        // Show calendar
+        if (independentStartDate) {
+            currentDataCalendarDate = new Date(independentStartDate);
+        } else if (independentEndDate) {
+            currentDataCalendarDate = new Date(independentEndDate);
+        } else {
+            currentDataCalendarDate = new Date();
+        }
+        
+        // Position calendar relative to the button
+        const button = document.getElementById('data-range-calendar-btn');
+        if (button) {
+            const buttonRect = button.getBoundingClientRect();
+            const parentRect = calendar.parentElement.getBoundingClientRect();
+            
+            // Calculate position relative to parent
+            const leftOffset = buttonRect.left - parentRect.left + (buttonRect.width / 2);
+            
+            // Set position
+            calendar.style.left = `${leftOffset}px`;
+            calendar.style.transform = 'translateX(-50%)';
+        }
+        
+        // Set display and ensure it's visible
+        calendar.style.display = 'block';
+        calendar.style.visibility = 'visible';
+        calendar.style.opacity = '1';
+        calendar.style.position = 'absolute';
+        calendar.style.zIndex = '2000';
+        
+        // Force a reflow to ensure display is applied
+        calendar.offsetHeight;
+        
+        console.log('About to render calendar...');
+        
+        // Render the calendar
+        renderDataTabCalendar();
+        
+        console.log('Calendar shown, display:', calendar.style.display);
+    } else {
+        // Hide calendar
+        calendar.style.display = 'none';
+        console.log('Calendar hidden');
+    }
+}
+
+function renderDataTabCalendar() {
+    const calendar = document.getElementById('data-tab-calendar');
+    const monthYearEl = document.getElementById('data-calendar-month-year');
+    const weekdaysEl = document.getElementById('data-calendar-weekdays');
+    const daysEl = document.getElementById('data-calendar-days');
+    
+    console.log('renderDataTabCalendar called');
+    console.log('Elements found - monthYear:', !!monthYearEl, 'weekdays:', !!weekdaysEl, 'days:', !!daysEl);
+    
+    // Preserve calendar visibility when re-rendering
+    const wasVisible = calendar && (calendar.style.display === 'block' || window.getComputedStyle(calendar).display === 'block');
+    
+    if (!monthYearEl || !weekdaysEl || !daysEl) {
+        console.error('Calendar elements not found!');
+        console.error('Missing: ', {
+            monthYear: !monthYearEl ? 'data-calendar-month-year' : 'ok',
+            weekdays: !weekdaysEl ? 'data-calendar-weekdays' : 'ok',
+            days: !daysEl ? 'data-calendar-days' : 'ok'
+        });
+        return;
+    }
+    
+    const year = currentDataCalendarDate.getFullYear();
+    const month = currentDataCalendarDate.getMonth();
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    // Month names
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    
+    // Update month/year header
+    monthYearEl.textContent = `${monthNames[month]} ${year}`;
+    
+    // Weekday headers
+    let weekdaysHtml = '';
+    dayNames.forEach(day => {
+        weekdaysHtml += `<div class="compact-calendar-weekday">${day}</div>`;
+    });
+    weekdaysEl.innerHTML = weekdaysHtml;
+    
+    // Get today's date for highlighting
+    const today = new Date();
+    const isToday = (day) => {
+        return day === today.getDate() && 
+               month === today.getMonth() && 
+               year === today.getFullYear();
+    };
+    
+    // Show independent dates (for plots)
+    const startDate = independentStartDate;
+    const endDate = independentEndDate;
+    
+    // Check if date is in selected range
+    const isInRange = (day) => {
+        if (!startDate || !endDate) return false;
+        const date = new Date(year, month, day);
+        return date >= startDate && date <= endDate;
+    };
+    
+    // Check if date is selected (start or end)
+    const isSelected = (day) => {
+        if (!startDate && !endDate) return false;
+        const date = new Date(year, month, day);
+        if (startDate && date.getTime() === startDate.getTime()) return true;
+        if (endDate && date.getTime() === endDate.getTime()) return true;
+        return false;
+    };
+    
+    let daysHtml = '';
+    
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        daysHtml += `<div class="compact-calendar-day other-month">${day}</div>`;
+    }
+    
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const todayClass = isToday(day) ? 'today' : '';
+        const selectedClass = isSelected(day) ? 'selected' : '';
+        const inRangeClass = isInRange(day) && !selectedClass ? 'in-range' : '';
+        daysHtml += `<div class="compact-calendar-day ${todayClass} ${selectedClass} ${inRangeClass}" data-day="${day}" data-month="${month}" data-year="${year}">${day}</div>`;
+    }
+    
+    // Next month days (fill remaining cells)
+    const totalCells = firstDay + daysInMonth;
+    const remainingCells = 42 - totalCells;
+    for (let day = 1; day <= remainingCells; day++) {
+        daysHtml += `<div class="compact-calendar-day other-month">${day}</div>`;
+    }
+    
+    daysEl.innerHTML = daysHtml;
+    
+    console.log('Calendar rendered with', daysInMonth, 'days');
+    
+    // Restore calendar visibility if it was visible before re-render
+    if (wasVisible && calendar) {
+        calendar.style.display = 'block';
+        calendar.style.visibility = 'visible';
+        calendar.style.opacity = '1';
+    }
+    
+    // Add navigation event listeners
+    const prevBtn = document.getElementById('data-calendar-prev');
+    const nextBtn = document.getElementById('data-calendar-next');
+    
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            currentDataCalendarDate.setMonth(month - 1);
+            renderDataTabCalendar();
+        };
+    }
+    
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            currentDataCalendarDate.setMonth(month + 1);
+            renderDataTabCalendar();
+        };
+    }
+    
+    // Day click handlers for range selection
+    daysEl.querySelectorAll('.compact-calendar-day:not(.other-month)').forEach(dayEl => {
+        dayEl.addEventListener('click', () => {
+            const day = parseInt(dayEl.dataset.day);
+            const selectedMonth = parseInt(dayEl.dataset.month);
+            const selectedYear = parseInt(dayEl.dataset.year);
+            const clickedDate = new Date(selectedYear, selectedMonth, day);
+            
+            let shouldCloseCalendar = false;
+            
+            // Update independent dates (for plots)
+            // If no dates selected, set as start
+            if (!independentStartDate && !independentEndDate) {
+                independentStartDate = clickedDate;
+                console.log('Start date set:', clickedDate);
+            }
+            // If only start date selected
+            else if (independentStartDate && !independentEndDate) {
+                if (clickedDate < independentStartDate) {
+                    // Clicked date is before start, swap them
+                    independentEndDate = independentStartDate;
+                    independentStartDate = clickedDate;
+                } else {
+                    independentEndDate = clickedDate;
+                }
+                console.log('End date set:', clickedDate);
+                // Close calendar after selecting both dates
+                shouldCloseCalendar = true;
+            }
+            // If both dates selected, start new selection
+            else {
+                independentStartDate = clickedDate;
+                independentEndDate = null;
+                console.log('Restarting selection, start date set:', clickedDate);
+            }
+            
+            updateDateRangeSummary();
+            renderDataTabCalendar(); // Re-render to show updated selection
+            
+            // Only close calendar after both dates are selected
+            if (shouldCloseCalendar && independentStartDate && independentEndDate) {
+                setTimeout(() => {
+                    const calendarEl = document.getElementById('data-tab-calendar');
+                    if (calendarEl) {
+                        calendarEl.style.display = 'none';
+                        console.log('Calendar closed after range selection');
+                    }
+                }, 300); // Small delay to see the selection
+            }
+        });
+    });
+}
+
+// Close data tab calendar when clicking outside
+document.addEventListener('click', (e) => {
+    const calendar = document.getElementById('data-tab-calendar');
+    const calendarBtn = document.getElementById('data-range-calendar-btn');
+    
+    if (calendar && !calendar.contains(e.target) && 
+        e.target !== calendarBtn && !calendarBtn?.contains(e.target)) {
+        calendar.style.display = 'none';
+    }
+});
+
+// Small calendar popup functionality
+let currentSmallCalendarDate = new Date();
+let smallCalendarMode = 'range'; // 'range' for date range selection
+
+function showSmallCalendar(mode, button) {
+    smallCalendarMode = mode;
+    const popup = document.getElementById('small-calendar-popup');
+    if (!popup) return;
+    
+    // Always use independent dates for the calendar button (allows two different ranges)
+    // When coupled, changes will sync; when uncoupled, they remain independent
+    if (independentStartDate) {
+        currentSmallCalendarDate = new Date(independentStartDate);
+    } else if (independentEndDate) {
+        currentSmallCalendarDate = new Date(independentEndDate);
+    } else {
+        currentSmallCalendarDate = new Date();
+    }
+    
+    popup.style.display = 'block';
+    renderSmallCalendar();
+}
+
+function hideSmallCalendar() {
+    const popup = document.getElementById('small-calendar-popup');
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}
+
+function renderSmallCalendar() {
+    const monthYearEl = document.getElementById('small-calendar-month-year');
+    const weekdaysEl = document.getElementById('small-calendar-weekdays');
+    const daysEl = document.getElementById('small-calendar-days');
+    
+    if (!monthYearEl || !weekdaysEl || !daysEl) return;
+    
+    const year = currentSmallCalendarDate.getFullYear();
+    const month = currentSmallCalendarDate.getMonth();
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    // Month names
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    
+    // Update month/year header
+    monthYearEl.textContent = `${monthNames[month]} ${year}`;
+    
+    // Weekday headers
+    let weekdaysHtml = '';
+    dayNames.forEach(day => {
+        weekdaysHtml += `<div class="small-calendar-weekday">${day}</div>`;
+    });
+    weekdaysEl.innerHTML = weekdaysHtml;
+    
+    // Get today's date for highlighting
+    const today = new Date();
+    const isToday = (day) => {
+        return day === today.getDate() && 
+               month === today.getMonth() && 
+               year === today.getFullYear();
+    };
+    
+    // Small calendar popup (Data tab) - always shows independent dates for plots
+    const startDate = independentStartDate;
+    const endDate = independentEndDate;
+    
+    // Check if date is in selected range
+    const isInRange = (day) => {
+        if (!startDate || !endDate) return false;
+        const date = new Date(year, month, day);
+        return date >= startDate && date <= endDate;
+    };
+    
+    // Check if date is selected (start or end)
+    const isSelected = (day) => {
+        if (!startDate && !endDate) return false;
+        const date = new Date(year, month, day);
+        if (startDate && date.getTime() === startDate.getTime()) return true;
+        if (endDate && date.getTime() === endDate.getTime()) return true;
+        return false;
+    };
+    
+    let daysHtml = '';
+    
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        daysHtml += `<div class="small-calendar-day other-month">${day}</div>`;
+    }
+    
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const todayClass = isToday(day) ? 'today' : '';
+        const selectedClass = isSelected(day) ? 'selected' : '';
+        const inRangeClass = isInRange(day) && !selectedClass ? 'in-range' : '';
+        daysHtml += `<div class="small-calendar-day ${todayClass} ${selectedClass} ${inRangeClass}" data-day="${day}" data-month="${month}" data-year="${year}">${day}</div>`;
+    }
+    
+    // Next month days (fill remaining cells)
+    const totalCells = firstDay + daysInMonth;
+    const remainingCells = 42 - totalCells;
+    for (let day = 1; day <= remainingCells; day++) {
+        daysHtml += `<div class="small-calendar-day other-month">${day}</div>`;
+    }
+    
+    daysEl.innerHTML = daysHtml;
+    
+    // Add navigation event listeners
+    const prevBtn = document.getElementById('small-calendar-prev');
+    const nextBtn = document.getElementById('small-calendar-next');
+    
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            currentSmallCalendarDate.setMonth(month - 1);
+            renderSmallCalendar();
+        };
+    }
+    
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            currentSmallCalendarDate.setMonth(month + 1);
+            renderSmallCalendar();
+        };
+    }
+    
+    // Day click handlers for range selection
+    daysEl.querySelectorAll('.small-calendar-day:not(.other-month)').forEach(dayEl => {
+        dayEl.addEventListener('click', () => {
+            const day = parseInt(dayEl.dataset.day);
+            const selectedMonth = parseInt(dayEl.dataset.month);
+            const selectedYear = parseInt(dayEl.dataset.year);
+            const clickedDate = new Date(selectedYear, selectedMonth, day);
+            
+            // Small calendar popup (Data tab) - updates independent dates for plots
+            // If no dates selected, set as start
+            if (!independentStartDate && !independentEndDate) {
+                independentStartDate = clickedDate;
+            }
+            // If only start date selected
+            else if (independentStartDate && !independentEndDate) {
+                if (clickedDate < independentStartDate) {
+                    // Clicked date is before start, swap them
+                    independentEndDate = independentStartDate;
+                    independentStartDate = clickedDate;
+                } else {
+                    independentEndDate = clickedDate;
+                }
+            }
+            // If both dates selected, start new selection
+            else {
+                independentStartDate = clickedDate;
+                independentEndDate = null;
+            }
+            
+            updateDateRangeSummary();
+            renderSmallCalendar(); // Re-render to show updated selection
+        });
+    });
+}
+
+// Close calendar when clicking outside
+document.addEventListener('click', (e) => {
+    const popup = document.getElementById('small-calendar-popup');
+    const rangeBtn = document.getElementById('range-calendar-btn');
+    
+    if (popup && !popup.contains(e.target) && 
+        e.target !== rangeBtn && !rangeBtn?.contains(e.target)) {
+        hideSmallCalendar();
+    }
+});
 
 // Product selector functionality
 let selectedProduct = null;
@@ -988,6 +1559,29 @@ function selectProduct(productId, productName) {
 function renderMockVisualizations() {
     renderTouristHistogram();
     renderClimateLinePlot();
+    initializeSubTabs();
+}
+
+// Initialize sub-tabs functionality
+function initializeSubTabs() {
+    const subTabTriggers = document.querySelectorAll('.sub-tab-trigger');
+    
+    subTabTriggers.forEach(trigger => {
+        trigger.addEventListener('click', () => {
+            const subTabId = trigger.dataset.subtab;
+            
+            // Remove active class from all triggers and contents
+            document.querySelectorAll('.sub-tab-trigger').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked trigger and corresponding content
+            trigger.classList.add('active');
+            const subTabContent = document.getElementById(`subtab-${subTabId}`);
+            if (subTabContent) {
+                subTabContent.classList.add('active');
+            }
+        });
+    });
 }
 
 function renderTouristHistogram() {
@@ -1739,6 +2333,20 @@ function addWhc001PointsToMap(sitesData) {
                     essential: true
                 });
                 
+                // Switch to Information tab FIRST
+                document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                const infoTrigger = document.querySelector('[data-tab="information"]');
+                const infoTab = document.getElementById('information-tab');
+                
+                if (infoTrigger) {
+                    infoTrigger.classList.add('active');
+                }
+                if (infoTab) {
+                    infoTab.classList.add('active');
+                }
+                
                 const siteData = {
                     name: feature.properties.name,
                     shortDescription: feature.properties.shortDescription,
@@ -1747,6 +2355,8 @@ function addWhc001PointsToMap(sitesData) {
                     category: feature.properties.category,
                     mainImage: feature.properties.mainImage
                 };
+                
+                // Then display site details
                 displaySiteDetails(siteData);
             }
         });
@@ -1917,12 +2527,23 @@ function displaySearchResults(filtered) {
                     duration: 1500
                 });
             }
-            displaySiteDetails(site);
-            // Switch to Information tab
+            
+            // Switch to Information tab FIRST
             document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelector('[data-tab="information"]')?.classList.add('active');
-            document.getElementById('information-tab')?.classList.add('active');
+            
+            const infoTrigger = document.querySelector('[data-tab="information"]');
+            const infoTab = document.getElementById('information-tab');
+            
+            if (infoTrigger) {
+                infoTrigger.classList.add('active');
+            }
+            if (infoTab) {
+                infoTab.classList.add('active');
+            }
+            
+            // Then display site details
+            displaySiteDetails(site);
         });
         
         const dangerBadge = site.danger === true || site.danger === 'true' || site.danger === 'True' 
@@ -2008,4 +2629,18 @@ function displaySiteDetails(siteData) {
 
 // Initialize App
 initMap();
+
+// Initialize calendar button on page load if Data tab is active
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if Data tab is active on page load
+    const dataTab = document.getElementById('data-tab');
+    if (dataTab && dataTab.classList.contains('active')) {
+        setupDataTabCalendar();
+    }
+    
+    // Also set up the button regardless (it will be re-setup when switching tabs)
+    setTimeout(() => {
+        setupDataTabCalendar();
+    }, 100);
+});
 
