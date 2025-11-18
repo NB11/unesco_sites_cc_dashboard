@@ -678,6 +678,7 @@ let selectedEndDate = null;
 
 function switchToDataTab(sentinelType) {
     selectedSentinel = sentinelType;
+    selectedProduct = null; // Reset product selection
     
     // Show compact calendar
     const compactCalendar = document.getElementById('compact-calendar');
@@ -709,6 +710,11 @@ function switchToDataTab(sentinelType) {
     // Render compact calendar
     renderCompactCalendar();
     updateDateRangeSummary();
+    
+    // If dates are already selected, show product selector
+    if (selectedStartDate && selectedEndDate) {
+        showProductSelector();
+    }
 }
 
 function renderCompactCalendar() {
@@ -858,6 +864,10 @@ function updateDateRangeSummary() {
             mockViz.style.display = 'block';
             renderMockVisualizations();
         }
+        // Show product selector when both dates and Sentinel are selected
+        if (selectedSentinel) {
+            showProductSelector();
+        }
         console.log('Date range selected:', startStr, 'to', endStr, 'for Sentinel', selectedSentinel);
     } else if (selectedStartDate) {
         const startStr = selectedStartDate.toISOString().split('T')[0];
@@ -865,12 +875,114 @@ function updateDateRangeSummary() {
         if (rangeStartValue) rangeStartValue.textContent = startStr;
         if (rangeEndValue) rangeEndValue.textContent = '-';
         if (mockViz) mockViz.style.display = 'none';
+        hideProductSelector();
     } else {
         if (value) value.textContent = 'No dates selected';
         if (rangeStartValue) rangeStartValue.textContent = '-';
         if (rangeEndValue) rangeEndValue.textContent = '-';
         if (mockViz) mockViz.style.display = 'none';
+        hideProductSelector();
     }
+}
+
+// Product selector functionality
+let selectedProduct = null;
+
+const sentinelProducts = {
+    '1': [
+        { id: 'sar', name: 'SAR', description: 'Synthetic Aperture Radar' },
+        { id: 'vv', name: 'VV Polarization', description: 'Vertical-Vertical' },
+        { id: 'vh', name: 'VH Polarization', description: 'Vertical-Horizontal' },
+        { id: 'coherence', name: 'Coherence', description: 'Interferometric coherence' }
+    ],
+    '2': [
+        { id: 'ndvi', name: 'NDVI', description: 'Normalized Difference Vegetation Index' },
+        { id: 'evi', name: 'EVI', description: 'Enhanced Vegetation Index' },
+        { id: 'ndwi', name: 'NDWI', description: 'Normalized Difference Water Index' },
+        { id: 'savi', name: 'SAVI', description: 'Soil-Adjusted Vegetation Index' },
+        { id: 'ndbi', name: 'NDBI', description: 'Normalized Difference Built-up Index' },
+        { id: 'true_color', name: 'True Color', description: 'RGB composite' }
+    ],
+    '3': [
+        { id: 'sst', name: 'Sea Surface Temperature', description: 'SST' },
+        { id: 'chl', name: 'Chlorophyll-a', description: 'Ocean color' },
+        { id: 'sla', name: 'Sea Level Anomaly', description: 'SLA' },
+        { id: 'sst_anomaly', name: 'SST Anomaly', description: 'Temperature anomaly' }
+    ],
+    '5': [
+        { id: 'no2', name: 'NO₂', description: 'Nitrogen Dioxide' },
+        { id: 'co', name: 'CO', description: 'Carbon Monoxide' },
+        { id: 'o3', name: 'O₃', description: 'Ozone' },
+        { id: 'so2', name: 'SO₂', description: 'Sulfur Dioxide' },
+        { id: 'ch4', name: 'CH₄', description: 'Methane' },
+        { id: 'hcho', name: 'HCHO', description: 'Formaldehyde' },
+        { id: 'aerosol', name: 'Aerosol Index', description: 'AI' }
+    ],
+    '6': [
+        { id: 'sea_level', name: 'Sea Level', description: 'Altimetry' },
+        { id: 'significant_wave_height', name: 'Significant Wave Height', description: 'SWH' },
+        { id: 'wind_speed', name: 'Wind Speed', description: 'Ocean surface wind' }
+    ]
+};
+
+function showProductSelector() {
+    if (!selectedSentinel) return;
+    
+    const modal = document.getElementById('product-selector-modal');
+    const title = document.getElementById('product-selector-title');
+    const body = document.getElementById('product-selector-body');
+    
+    if (!modal || !title || !body) return;
+    
+    const products = sentinelProducts[selectedSentinel] || [];
+    title.textContent = 'Select Product';
+    
+    // Clear previous content
+    body.innerHTML = '';
+    
+    if (products.length === 0) {
+        body.innerHTML = '<div class="no-products">No products available for this Sentinel</div>';
+    } else {
+        products.forEach(product => {
+            const productBtn = document.createElement('button');
+            productBtn.className = 'product-btn';
+            productBtn.dataset.product = product.id;
+            productBtn.innerHTML = `
+                <div class="product-btn-content">
+                    <span class="product-btn-name">${product.name}</span>
+                    <span class="product-btn-desc">${product.description}</span>
+                </div>
+            `;
+            productBtn.addEventListener('click', () => {
+                selectProduct(product.id, product.name);
+            });
+            body.appendChild(productBtn);
+        });
+    }
+    
+    modal.style.display = 'block';
+}
+
+function hideProductSelector() {
+    const modal = document.getElementById('product-selector-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function selectProduct(productId, productName) {
+    selectedProduct = { id: productId, name: productName };
+    
+    // Update button states
+    document.querySelectorAll('.product-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.product === productId) {
+            btn.classList.add('active');
+        }
+    });
+    
+    console.log('Product selected:', productName, 'for Sentinel', selectedSentinel);
+    // Here you would typically load the actual data for this product
 }
 
 function renderMockVisualizations() {
