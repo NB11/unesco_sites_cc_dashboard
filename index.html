@@ -300,55 +300,135 @@
                 </button>
             </div>
             
-            <!-- Sentinel Control -->
-            <div class="sentinel-control">
-                <div class="sentinel-header">
-                    <span>Sentinel</span>
-                </div>
-                <button class="sentinel-btn" data-sentinel="1" id="sentinel-1">
-                    <span>Sentinel 1</span>
+            <!-- Climate Control -->
+            <div class="climate-control" id="climate-control">
+                <button class="climate-toggle-btn" id="climate-toggle-btn">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                    </svg>
+                    <span>Climate</span>
+                    <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </button>
-                <button class="sentinel-btn" data-sentinel="2" id="sentinel-2">
-                    <span>Sentinel 2</span>
-                </button>
-                <button class="sentinel-btn" data-sentinel="3" id="sentinel-3">
-                    <span>Sentinel 3</span>
-                </button>
-                <button class="sentinel-btn" data-sentinel="5" id="sentinel-5">
-                    <span>Sentinel 5</span>
-                </button>
-                <button class="sentinel-btn" data-sentinel="6" id="sentinel-6">
-                    <span>Sentinel 6</span>
-                </button>
-            </div>
-            
-            <!-- Compact Calendar -->
-            <div class="compact-calendar" id="compact-calendar" style="display: none;">
-                <div class="compact-calendar-header">
-                    <button class="compact-calendar-nav-btn" id="compact-calendar-prev">
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                    <span class="compact-calendar-month-year" id="compact-calendar-month-year"></span>
-                    <button class="compact-calendar-nav-btn" id="compact-calendar-next">
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="compact-calendar-weekdays" id="compact-calendar-weekdays"></div>
-                <div class="compact-calendar-days" id="compact-calendar-days"></div>
-            </div>
-            
-            <!-- Product Selector Modal -->
-            <div class="product-selector-modal" id="product-selector-modal" style="display: none;">
-                <div class="product-selector-content">
-                    <div class="product-selector-header">
-                        <h4 id="product-selector-title">Select Product</h4>
+                <div class="climate-controls-content" id="climate-controls-content" style="display: none;">
+                    <div class="control-group">
+                        <label class="control-label">Time Period</label>
+                        <select id="climate-time-period" class="control-select">
+                            <option value="1986-2005">Historical (1986-2005)</option>
+                            <option value="2020-2039">Near Future (2020-2039)</option>
+                            <option value="2040-2059">Mid-Century (2040-2059)</option>
+                            <option value="2080-2099">End of Century (2080-2099)</option>
+                        </select>
                     </div>
-                    <div class="product-selector-body" id="product-selector-body">
-                        <!-- Products will be populated here -->
+                    
+                    <div class="control-group">
+                        <label class="control-label">Percentile</label>
+                        <div class="percentile-buttons">
+                            <button class="percentile-btn active" data-percentile="5">5th</button>
+                            <button class="percentile-btn" data-percentile="50">50th</button>
+                            <button class="percentile-btn" data-percentile="95">95th</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Animation</label>
+                        <div class="animation-controls">
+                            <input type="range" id="climate-time-slider" class="time-slider" min="1986" max="2099" value="2000" step="1" />
+                            <div class="slider-labels">
+                                <span>1986</span>
+                                <span id="slider-current-year">2000</span>
+                                <span>2099</span>
+                            </div>
+                            <div class="animation-buttons">
+                                <button id="play-animation" class="anim-btn">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Play
+                                </button>
+                                <button id="pause-animation" class="anim-btn" style="display: none;">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Pause
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Color Scale</label>
+                        <div class="color-scale-legend" id="color-scale-legend">
+                            <div class="scale-gradient"></div>
+                            <div class="scale-labels">
+                                <span id="scale-min">-</span>
+                                <span id="scale-max">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Sentinel Control -->
+            <div class="sentinel-control" id="sentinel-control">
+                <button class="sentinel-toggle-btn" id="sentinel-toggle-btn">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>Sentinel</span>
+                    <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div class="sentinel-controls-content" id="sentinel-controls-content" style="display: none;">
+                    <div class="sentinel-buttons">
+                        <button class="sentinel-btn" data-sentinel="1" id="sentinel-1">
+                            <span>Sentinel 1</span>
+                        </button>
+                        <button class="sentinel-btn" data-sentinel="2" id="sentinel-2">
+                            <span>Sentinel 2</span>
+                        </button>
+                        <button class="sentinel-btn" data-sentinel="3" id="sentinel-3">
+                            <span>Sentinel 3</span>
+                        </button>
+                        <button class="sentinel-btn" data-sentinel="5" id="sentinel-5">
+                            <span>Sentinel 5</span>
+                        </button>
+                        <button class="sentinel-btn" data-sentinel="6" id="sentinel-6">
+                            <span>Sentinel 6</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Compact Calendar integrated in Sentinel -->
+                    <div class="compact-calendar" id="compact-calendar" style="display: none;">
+                        <div class="compact-calendar-header">
+                            <button class="compact-calendar-nav-btn" id="compact-calendar-prev">
+                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <span class="compact-calendar-month-year" id="compact-calendar-month-year"></span>
+                            <button class="compact-calendar-nav-btn" id="compact-calendar-next">
+                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="compact-calendar-weekdays" id="compact-calendar-weekdays"></div>
+                        <div class="compact-calendar-days" id="compact-calendar-days"></div>
+                    </div>
+                    
+                    <!-- Product Selector integrated in Sentinel -->
+                    <div class="product-selector-integrated" id="product-selector-modal" style="display: none;">
+                        <div class="product-selector-header-integrated">
+                            <h4 id="product-selector-title">Select Product</h4>
+                        </div>
+                        <div class="product-selector-body-integrated" id="product-selector-body">
+                            <!-- Products will be populated here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -369,6 +449,9 @@
 
     <!-- Maplibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    
+    <!-- SheetJS for Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     
     <!-- Custom JavaScript -->
     <script src="script.js"></script>

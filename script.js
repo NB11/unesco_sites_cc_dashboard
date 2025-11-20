@@ -103,11 +103,15 @@ function initMap() {
             mapPlaceholder.classList.add('hidden');
         }
         
+        // Ensure map is visible
+        ensureMapVisible();
+        
         // Force another resize after load
         setTimeout(() => {
             if (map) {
                 map.resize();
                 console.log('Map resized after load');
+                ensureMapVisible();
             }
         }, 100);
         
@@ -699,10 +703,15 @@ function switchToDataTab(sentinelType) {
     selectedSentinel = sentinelType;
     selectedProduct = null; // Reset product selection
     
-    // Show compact calendar
-    const compactCalendar = document.getElementById('compact-calendar');
-    if (compactCalendar) {
-        compactCalendar.style.display = 'block';
+    // Expand Sentinel control if not already expanded
+    const sentinelControl = document.getElementById('sentinel-control');
+    const sentinelToggleBtn = document.getElementById('sentinel-toggle-btn');
+    const sentinelControlsContent = document.getElementById('sentinel-controls-content');
+    
+    if (sentinelControl && !sentinelControl.classList.contains('expanded')) {
+        sentinelControl.classList.add('expanded');
+        if (sentinelToggleBtn) sentinelToggleBtn.classList.add('active');
+        if (sentinelControlsContent) sentinelControlsContent.style.display = 'flex';
     }
     
     // Switch to Data tab
@@ -733,9 +742,22 @@ function switchToDataTab(sentinelType) {
 
 
 function renderCompactCalendar() {
+    const compactCalendar = document.getElementById('compact-calendar');
+    if (!compactCalendar) return;
+    
+    // Show calendar if Sentinel is selected and Sentinel control is expanded
+    const sentinelControl = document.getElementById('sentinel-control');
+    const isSentinelExpanded = sentinelControl && sentinelControl.classList.contains('expanded');
+    
     // Show calendar if Sentinel is selected, or if we're in Data tab
     const dataTab = document.getElementById('data-tab');
     const isDataTabActive = dataTab && dataTab.classList.contains('active');
+    
+    // Only show calendar if Sentinel is expanded or Data tab is active
+    if (!isSentinelExpanded && !isDataTabActive) {
+        compactCalendar.style.display = 'none';
+        return;
+    }
     
     const monthYearEl = document.getElementById('compact-calendar-month-year');
     const weekdaysEl = document.getElementById('compact-calendar-weekdays');
@@ -743,10 +765,11 @@ function renderCompactCalendar() {
     
     if (!monthYearEl || !weekdaysEl || !daysEl) return;
     
-    // Show calendar if Sentinel is selected or if Data tab is active
-    const compactCalendar = document.getElementById('compact-calendar');
-    if (compactCalendar && (selectedSentinel || isDataTabActive)) {
+    // Show calendar if Sentinel is selected and expanded, or if Data tab is active
+    if ((selectedSentinel && isSentinelExpanded) || isDataTabActive) {
         compactCalendar.style.display = 'block';
+    } else {
+        compactCalendar.style.display = 'none';
     }
     
     const year = currentStartCalendarDate.getFullYear();
@@ -1501,7 +1524,8 @@ function showProductSelector() {
     
     const modal = document.getElementById('product-selector-modal');
     const title = document.getElementById('product-selector-title');
-    const body = document.getElementById('product-selector-body');
+    // Use integrated body (inside Sentinel) if available, otherwise fallback to regular body
+    const body = document.getElementById('product-selector-body-integrated') || document.getElementById('product-selector-body');
     
     if (!modal || !title || !body) return;
     
@@ -1512,7 +1536,7 @@ function showProductSelector() {
     body.innerHTML = '';
     
     if (products.length === 0) {
-        body.innerHTML = '<div class="no-products">No products available for this Sentinel</div>';
+        body.innerHTML = '<div class="no-products" style="padding: 0.5rem; text-align: center; color: var(--muted-foreground); font-size: 0.75rem;">No products available for this Sentinel</div>';
     } else {
         products.forEach(product => {
             const productBtn = document.createElement('button');
@@ -1531,7 +1555,19 @@ function showProductSelector() {
         });
     }
     
+    // Show the product selector
     modal.style.display = 'block';
+    
+    // Ensure Sentinel control is expanded to show the product selector
+    const sentinelControl = document.getElementById('sentinel-control');
+    const sentinelToggleBtn = document.getElementById('sentinel-toggle-btn');
+    const sentinelControlsContent = document.getElementById('sentinel-controls-content');
+    
+    if (sentinelControl && !sentinelControl.classList.contains('expanded')) {
+        sentinelControl.classList.add('expanded');
+        if (sentinelToggleBtn) sentinelToggleBtn.classList.add('active');
+        if (sentinelControlsContent) sentinelControlsContent.style.display = 'flex';
+    }
 }
 
 function hideProductSelector() {
@@ -2642,5 +2678,700 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         setupDataTabCalendar();
     }, 100);
+    
+    // Initialize Climate Control
+    initializeClimateControl();
+    
+    // Initialize Sentinel Control
+    initializeSentinelControl();
 });
+
+// Climate Control State
+let climateData = null;
+let climateBoundaries = null;
+let climateLayer = null;
+let selectedTimePeriod = '1986-2005';
+let selectedPercentile = 5;
+let isAnimating = false;
+let animationInterval = null;
+let currentYear = 2000;
+
+// Initialize Climate Control Toggle
+function initializeClimateControl() {
+    const toggleBtn = document.getElementById('climate-toggle-btn');
+    const controlsContent = document.getElementById('climate-controls-content');
+    const climateControl = document.getElementById('climate-control');
+    
+    if (!toggleBtn || !controlsContent || !climateControl) return;
+    
+    toggleBtn.addEventListener('click', () => {
+        const isExpanded = climateControl.classList.contains('expanded');
+        
+        if (isExpanded) {
+            // Collapse
+            climateControl.classList.remove('expanded');
+            toggleBtn.classList.remove('active');
+            controlsContent.style.display = 'none';
+            
+            // Hide choropleth layer when collapsed
+            hideChoroplethLayer();
+            
+            // Update position immediately (function uses requestAnimationFrame internally)
+            updateSentinelPosition(false);
+        } else {
+            // Expand
+            climateControl.classList.add('expanded');
+            toggleBtn.classList.add('active');
+            controlsContent.style.display = 'flex';
+            
+            // Show choropleth layer when expanded
+            showChoroplethLayer();
+            
+            // Update position immediately (function uses requestAnimationFrame internally)
+            updateSentinelPosition(true);
+        }
+    });
+    
+    // Setup percentile buttons
+    document.querySelectorAll('.percentile-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.percentile-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedPercentile = parseInt(btn.dataset.percentile);
+            updateClimateVisualization();
+        });
+    });
+    
+    // Setup time period selector
+    const timePeriodSelect = document.getElementById('climate-time-period');
+    if (timePeriodSelect) {
+        timePeriodSelect.addEventListener('change', (e) => {
+            selectedTimePeriod = e.target.value;
+            updateSliderRange(e.target.value);
+            updateClimateVisualization();
+        });
+    }
+    
+    // Update slider range based on time period
+    function updateSliderRange(timePeriod) {
+        const slider = document.getElementById('climate-time-slider');
+        if (!slider) return;
+        
+        if (timePeriod === '1986-2005') {
+            slider.min = 1986;
+            slider.max = 2005;
+            slider.value = 1995;
+        } else if (timePeriod === '2020-2039') {
+            slider.min = 2020;
+            slider.max = 2039;
+            slider.value = 2030;
+        } else if (timePeriod === '2040-2059') {
+            slider.min = 2040;
+            slider.max = 2059;
+            slider.value = 2050;
+        } else if (timePeriod === '2080-2099') {
+            slider.min = 2080;
+            slider.max = 2099;
+            slider.value = 2090;
+        }
+        
+        const sliderYear = document.getElementById('slider-current-year');
+        if (sliderYear) {
+            sliderYear.textContent = slider.value;
+        }
+        currentYear = parseInt(slider.value);
+    }
+    
+    // Setup time slider
+    const timeSlider = document.getElementById('climate-time-slider');
+    const sliderYear = document.getElementById('slider-current-year');
+    if (timeSlider && sliderYear) {
+        timeSlider.addEventListener('input', (e) => {
+            const year = parseInt(e.target.value);
+            sliderYear.textContent = year;
+            currentYear = year;
+            updateClimateVisualization();
+        });
+    }
+    
+    // Setup animation buttons
+    const playBtn = document.getElementById('play-animation');
+    const pauseBtn = document.getElementById('pause-animation');
+    
+    if (playBtn) {
+        playBtn.addEventListener('click', () => {
+            startAnimation();
+        });
+    }
+    
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => {
+            stopAnimation();
+        });
+    }
+    
+    // Automatically load climate data on initialization
+    loadClimateData();
+    
+    // Ensure map is visible after initialization
+    setTimeout(() => {
+        ensureMapVisible();
+    }, 500);
+}
+
+// Load Climate Data from CSV and GeoJSON
+async function loadClimateData() {
+    try {
+        // Load CSV data
+        const csvResponse = await fetch('data/ClimateImpactLab_tas_annual_ssp2_45_long.csv');
+        const csvText = await csvResponse.text();
+        
+        // Parse CSV
+        const lines = csvText.trim().split('\n');
+        const headers = lines[0].split(',');
+        const csvData = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const values = parseCSVLine(lines[i]);
+            if (values.length === headers.length) {
+                const row = {};
+                headers.forEach((header, idx) => {
+                    row[header.trim()] = values[idx].trim();
+                });
+                csvData.push(row);
+            }
+        }
+        
+        console.log('Climate CSV data loaded:', csvData.length, 'rows');
+        console.log('Sample CSV data:', csvData[0]);
+        
+        // Load GeoJSON boundaries
+        const geoJsonResponse = await fetch('data/world-administrative-boundaries.geojson');
+        const geoJsonData = await geoJsonResponse.json();
+        
+        console.log('GeoJSON boundaries loaded:', geoJsonData.features.length, 'features');
+        console.log('Sample GeoJSON feature:', geoJsonData.features[0]);
+        
+        // Store data
+        climateData = csvData;
+        climateBoundaries = geoJsonData;
+        
+        // Process and visualize data
+        processClimateData();
+        
+        // If map is already loaded, create the choropleth layer immediately
+        if (map && map.loaded() && map.isStyleLoaded()) {
+            setTimeout(() => {
+                createChoroplethMap();
+                updateClimateVisualization();
+            }, 500);
+        } else if (map) {
+            // Otherwise wait for map to load
+            map.once('load', () => {
+                setTimeout(() => {
+                    createChoroplethMap();
+                    updateClimateVisualization();
+                }, 500);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading climate data:', error);
+        alert('Error loading climate data. Please check the console for details.');
+    }
+}
+
+// Process Climate Data
+function processClimateData() {
+    if (!climateData || !climateBoundaries || !map) {
+        console.log('Waiting for climate data and boundaries...', {
+            hasData: !!climateData,
+            hasBoundaries: !!climateBoundaries,
+            hasMap: !!map
+        });
+        return;
+    }
+    
+    console.log('Processing climate data...');
+    
+    // Create a lookup map: ISO -> { timePeriod -> { percentile -> value } }
+    const dataLookup = {};
+    
+    climateData.forEach(row => {
+        const iso = row.ISO.trim();
+        const timePeriod = row['Time Period'].trim();
+        const percentile = parseFloat(row.Percentile);
+        const value = parseFloat(row.Value);
+        
+        if (!dataLookup[iso]) {
+            dataLookup[iso] = {};
+        }
+        if (!dataLookup[iso][timePeriod]) {
+            dataLookup[iso][timePeriod] = {};
+        }
+        dataLookup[iso][timePeriod][percentile] = value;
+    });
+    
+    console.log('Data lookup created for', Object.keys(dataLookup).length, 'countries');
+    
+    // Store lookup for use in visualization
+    window.climateDataLookup = dataLookup;
+    
+    // Choropleth map creation is handled in loadClimateData after map loads
+}
+
+// Create Choropleth Map Layer
+function createChoroplethMap() {
+    if (!climateBoundaries || !map) {
+        console.log('Waiting for map and boundaries to be ready...', {
+            hasBoundaries: !!climateBoundaries,
+            hasMap: !!map
+        });
+        return;
+    }
+    
+    // Wait for map to be fully loaded
+    if (!map.loaded() || !map.isStyleLoaded()) {
+        console.log('Map not ready, waiting for style.load...');
+        map.once('style.load', () => {
+            setTimeout(() => createChoroplethMap(), 100);
+        });
+        return;
+    }
+    
+    console.log('Creating choropleth map layer...');
+    
+    // Remove existing climate layer if it exists
+    if (map.getLayer('climate-choropleth')) {
+        map.removeLayer('climate-choropleth');
+    }
+    if (map.getSource('climate-boundaries')) {
+        map.removeSource('climate-boundaries');
+    }
+    
+    // Add GeoJSON source
+    try {
+        map.addSource('climate-boundaries', {
+            type: 'geojson',
+            data: climateBoundaries
+        });
+        console.log('Climate boundaries source added');
+    } catch (error) {
+        console.error('Error adding climate boundaries source:', error);
+        return;
+    }
+    
+    // Determine where to insert the layer (after base layers but before UNESCO points)
+    // We want it to be visible but not cover the base map completely
+    const beforeId = map.getLayer('whc001-layer') ? 'whc001-layer' : undefined;
+    
+    // Add fill layer for choropleth
+    try {
+        map.addLayer({
+            id: 'climate-choropleth',
+            type: 'fill',
+            source: 'climate-boundaries',
+            layout: {
+                visibility: 'none' // Hidden by default, shown when climate control is expanded
+            },
+            minzoom: 0,
+            maxzoom: 24,
+            paint: {
+            'fill-color': [
+                'interpolate',
+                ['linear'],
+                ['get', 'temperature'],
+                40, '#1e40af',    // Dark blue (cold)
+                50, '#3b82f6',    // Blue
+                60, '#60a5fa',    // Light blue
+                65, '#86efac',    // Light green
+                70, '#fbbf24',    // Yellow
+                75, '#f59e0b',    // Orange
+                80, '#ef4444',    // Red
+                90, '#dc2626'     // Dark red (hot)
+            ],
+            'fill-opacity': [
+                'case',
+                ['==', ['get', 'temperature'], 0],
+                0,  // Transparent for missing data
+                0.6  // Reduced opacity so base map is visible
+            ],
+            'fill-outline-color': '#ffffff',
+            'fill-outline-width': 0.5
+            }
+        }, beforeId); // Add before points layer so it's visible
+        
+        console.log('Choropleth map layer created successfully');
+        
+        // Verify layer was added
+        if (map.getLayer('climate-choropleth')) {
+            console.log('✓ Climate choropleth layer verified on map');
+        } else {
+            console.error('✗ Climate choropleth layer NOT found on map!');
+        }
+    } catch (error) {
+        console.error('Error adding choropleth layer:', error);
+    }
+    
+    // Add hover effect (only add listeners once)
+    if (!map._climateHoverListenersAdded) {
+        map.on('mouseenter', 'climate-choropleth', (e) => {
+            map.getCanvas().style.cursor = 'pointer';
+            showCountryTooltip(e);
+        });
+        
+        map.on('mouseleave', 'climate-choropleth', () => {
+            map.getCanvas().style.cursor = '';
+            hideCountryTooltip();
+        });
+        
+        map._climateHoverListenersAdded = true;
+    }
+}
+
+// Update Climate Visualization
+function updateClimateVisualization() {
+    if (!climateData || !climateBoundaries || !map || !window.climateDataLookup) {
+        console.log('Cannot update visualization - missing data');
+        return;
+    }
+    
+    // Get current year from slider
+    const slider = document.getElementById('climate-time-slider');
+    currentYear = parseInt(slider?.value || 2000);
+    
+    // Map time period to year range (matching CSV format)
+    let timePeriodKey = '';
+    if (selectedTimePeriod === '1986-2005') {
+        timePeriodKey = 'Historical 1986-2005';
+    } else if (selectedTimePeriod === '2020-2039') {
+        timePeriodKey = 'Next decades 2020-2039';
+    } else if (selectedTimePeriod === '2040-2059') {
+        timePeriodKey = 'Midcentury 2040-2059';
+    } else if (selectedTimePeriod === '2080-2099') {
+        timePeriodKey = 'End of century 2080-2099';
+    }
+    
+    // Map percentile
+    const percentileKey = selectedPercentile === 5 ? 0.05 : selectedPercentile === 50 ? 0.5 : 0.95;
+    
+    // Update GeoJSON features with temperature values
+    const updatedFeatures = climateBoundaries.features.map(feature => {
+        const iso3 = feature.properties.iso3;
+        const dataLookup = window.climateDataLookup;
+        
+        // Create a new feature object (don't mutate original)
+        const newFeature = {
+            ...feature,
+            properties: {
+                ...feature.properties
+            }
+        };
+        
+        if (dataLookup && dataLookup[iso3] && dataLookup[iso3][timePeriodKey]) {
+            const tempValue = dataLookup[iso3][timePeriodKey][percentileKey];
+            if (tempValue !== undefined && tempValue !== null) {
+                newFeature.properties.temperature = tempValue;
+            } else {
+                newFeature.properties.temperature = 0; // Default to 0 for missing data
+            }
+        } else {
+            newFeature.properties.temperature = 0; // Default to 0 for missing data
+        }
+        
+        return newFeature;
+    });
+    
+    // Update the source data
+    const source = map.getSource('climate-boundaries');
+    if (source) {
+        source.setData({
+            type: 'FeatureCollection',
+            features: updatedFeatures
+        });
+        
+        // Count features with valid temperature data
+        const validTemps = updatedFeatures.filter(f => f.properties.temperature > 0);
+        console.log(`Updated ${validTemps.length} features with temperature data (out of ${updatedFeatures.length} total)`);
+        
+        if (validTemps.length > 0) {
+            const temps = validTemps.map(f => f.properties.temperature);
+            console.log(`Temperature range: ${Math.min(...temps).toFixed(1)}°F - ${Math.max(...temps).toFixed(1)}°F`);
+        }
+    } else {
+        console.warn('Climate boundaries source not found - layer may not be created yet');
+    }
+    
+    // Update color scale legend
+    updateColorScaleLegend();
+    
+    console.log('Visualization updated:', {
+        timePeriod: timePeriodKey,
+        percentile: percentileKey,
+        year: currentYear
+    });
+}
+
+// Update Color Scale Legend
+function updateColorScaleLegend() {
+    if (!window.climateDataLookup) return;
+    
+    // Calculate min/max temperatures from current data
+    const allTemps = [];
+    const dataLookup = window.climateDataLookup;
+    
+    Object.keys(dataLookup).forEach(iso => {
+        const timePeriodKey = selectedTimePeriod === '1986-2005' ? 'Historical 1986-2005' :
+                             selectedTimePeriod === '2020-2039' ? 'Next decades 2020-2039' :
+                             selectedTimePeriod === '2040-2059' ? 'Midcentury 2040-2059' :
+                             'End of century 2080-2099';
+        const percentileKey = selectedPercentile === 5 ? 0.05 : selectedPercentile === 50 ? 0.5 : 0.95;
+        
+        if (dataLookup[iso][timePeriodKey] && dataLookup[iso][timePeriodKey][percentileKey]) {
+            allTemps.push(dataLookup[iso][timePeriodKey][percentileKey]);
+        }
+    });
+    
+    if (allTemps.length > 0) {
+        const minTemp = Math.min(...allTemps);
+        const maxTemp = Math.max(...allTemps);
+        
+        const scaleMin = document.getElementById('scale-min');
+        const scaleMax = document.getElementById('scale-max');
+        
+        if (scaleMin) scaleMin.textContent = `${minTemp.toFixed(1)}°F`;
+        if (scaleMax) scaleMax.textContent = `${maxTemp.toFixed(1)}°F`;
+    }
+}
+
+// Show Country Tooltip on Hover
+function showCountryTooltip(e) {
+    const feature = e.features[0];
+    if (!feature) return;
+    
+    const properties = feature.properties;
+    const iso3 = properties.iso3;
+    const countryName = properties.name || 'Unknown';
+    const temp = feature.properties.temperature;
+    
+    // Create or update tooltip
+    let tooltip = document.getElementById('climate-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'climate-tooltip';
+        tooltip.className = 'climate-tooltip';
+        document.body.appendChild(tooltip);
+    }
+    
+    tooltip.innerHTML = `
+        <div class="tooltip-country">${countryName}</div>
+        <div class="tooltip-iso">ISO: ${iso3}</div>
+        <div class="tooltip-temp">Temperature: ${temp !== null && temp !== undefined ? temp.toFixed(2) + '°F' : 'N/A'}</div>
+    `;
+    
+    // Position tooltip relative to map container
+    const mapContainer = map.getContainer();
+    const rect = mapContainer.getBoundingClientRect();
+    const point = map.project(e.lngLat);
+    
+    tooltip.style.left = (rect.left + point.x + 10) + 'px';
+    tooltip.style.top = (rect.top + point.y - 10) + 'px';
+    tooltip.style.display = 'block';
+}
+
+// Hide Country Tooltip
+function hideCountryTooltip() {
+    const tooltip = document.getElementById('climate-tooltip');
+    if (tooltip) {
+        tooltip.style.display = 'none';
+    }
+}
+
+// Show Choropleth Layer
+function showChoroplethLayer() {
+    if (!map || !map.loaded()) return;
+    
+    const layer = map.getLayer('climate-choropleth');
+    if (layer) {
+        map.setLayoutProperty('climate-choropleth', 'visibility', 'visible');
+        console.log('Choropleth layer shown');
+    } else {
+        // Layer doesn't exist yet, create it
+        if (climateBoundaries) {
+            createChoroplethMap();
+            updateClimateVisualization();
+        }
+    }
+    
+    // Ensure map is visible
+    ensureMapVisible();
+}
+
+// Hide Choropleth Layer
+function hideChoroplethLayer() {
+    if (!map || !map.loaded()) return;
+    
+    const layer = map.getLayer('climate-choropleth');
+    if (layer) {
+        map.setLayoutProperty('climate-choropleth', 'visibility', 'none');
+        console.log('Choropleth layer hidden');
+    }
+    
+    // Ensure map is visible
+    ensureMapVisible();
+}
+
+// Ensure Map is Visible
+function ensureMapVisible() {
+    if (!map) return;
+    
+    const mapContainer = document.getElementById('map');
+    const mapContainerParent = document.querySelector('.map-container');
+    const mapCanvas = map.getCanvasContainer();
+    
+    if (mapContainer) {
+        mapContainer.style.display = 'block';
+        mapContainer.style.visibility = 'visible';
+        mapContainer.style.opacity = '1';
+    }
+    
+    if (mapContainerParent) {
+        mapContainerParent.style.display = 'block';
+        mapContainerParent.style.visibility = 'visible';
+        mapContainerParent.style.opacity = '1';
+    }
+    
+    if (mapCanvas) {
+        mapCanvas.style.display = 'block';
+        mapCanvas.style.visibility = 'visible';
+        mapCanvas.style.opacity = '1';
+    }
+    
+    // Force map resize and repaint
+    setTimeout(() => {
+        if (map && map.loaded()) {
+            map.resize();
+            map.triggerRepaint();
+        }
+    }, 100);
+}
+
+// Start Animation
+function startAnimation() {
+    if (isAnimating) return;
+    
+    isAnimating = true;
+    const playBtn = document.getElementById('play-animation');
+    const pauseBtn = document.getElementById('pause-animation');
+    const slider = document.getElementById('climate-time-slider');
+    
+    if (playBtn) playBtn.style.display = 'none';
+    if (pauseBtn) pauseBtn.style.display = 'flex';
+    
+    let currentYear = parseInt(slider?.value || 1986);
+    const minYear = 1986;
+    const maxYear = 2099;
+    
+    animationInterval = setInterval(() => {
+        currentYear += 1;
+        const slider = document.getElementById('climate-time-slider');
+        const maxYear = parseInt(slider?.max || 2099);
+        const minYear = parseInt(slider?.min || 1986);
+        
+        if (currentYear > maxYear) {
+            currentYear = minYear;
+        }
+        
+        if (slider) {
+            slider.value = currentYear;
+            const sliderYear = document.getElementById('slider-current-year');
+            if (sliderYear) sliderYear.textContent = currentYear;
+            slider.dispatchEvent(new Event('input'));
+        }
+    }, 100); // Update every 100ms
+}
+
+// Stop Animation
+function stopAnimation() {
+    if (!isAnimating) return;
+    
+    isAnimating = false;
+    const playBtn = document.getElementById('play-animation');
+    const pauseBtn = document.getElementById('pause-animation');
+    
+    if (playBtn) playBtn.style.display = 'flex';
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+}
+
+// Initialize Sentinel Control Toggle
+function initializeSentinelControl() {
+    const toggleBtn = document.getElementById('sentinel-toggle-btn');
+    const controlsContent = document.getElementById('sentinel-controls-content');
+    const sentinelControl = document.getElementById('sentinel-control');
+    
+    if (!toggleBtn || !controlsContent || !sentinelControl) return;
+    
+    toggleBtn.addEventListener('click', () => {
+        const isExpanded = sentinelControl.classList.contains('expanded');
+        
+        if (isExpanded) {
+            // Collapse
+            sentinelControl.classList.remove('expanded');
+            toggleBtn.classList.remove('active');
+            controlsContent.style.display = 'none';
+        } else {
+            // Expand
+            sentinelControl.classList.add('expanded');
+            toggleBtn.classList.add('active');
+            controlsContent.style.display = 'flex';
+            
+            // Render calendar if Sentinel is selected
+            if (selectedSentinel) {
+                renderCompactCalendar();
+            }
+        }
+    });
+}
+
+// Update Sentinel Position based on Climate widget state
+function updateSentinelPosition(climateExpanded) {
+    const sentinelControl = document.getElementById('sentinel-control');
+    const climateControl = document.getElementById('climate-control');
+    
+    if (!sentinelControl || !climateControl) return;
+    
+    // Use requestAnimationFrame to ensure DOM has updated, but do it immediately for faster response
+    requestAnimationFrame(() => {
+        // Get the map container's position for relative calculations
+        const mapContainer = document.querySelector('.map-container');
+        if (!mapContainer) return;
+        const mapRect = mapContainer.getBoundingClientRect();
+        
+        if (climateExpanded) {
+            // Calculate the bottom of the expanded climate control widget
+            const climateRect = climateControl.getBoundingClientRect();
+            const climateBottom = climateRect.bottom;
+            
+            // Calculate offset from top of map container
+            const offsetFromTop = climateBottom - mapRect.top + 10; // 10px spacing
+            
+            // Update Sentinel position
+            sentinelControl.style.top = `${offsetFromTop}px`;
+        } else {
+            // When collapsed, calculate position based on the collapsed climate button
+            const climateRect = climateControl.getBoundingClientRect();
+            const climateBottom = climateRect.bottom;
+            
+            // Calculate offset from top of map container (below collapsed climate button)
+            const offsetFromTop = climateBottom - mapRect.top + 10; // 10px spacing
+            
+            // Update Sentinel position to be below the collapsed climate button
+            sentinelControl.style.top = `${offsetFromTop}px`;
+        }
+    });
+}
 

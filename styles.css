@@ -849,15 +849,279 @@ body {
     height: 1rem;
 }
 
+/* Climate Control */
+.climate-control {
+    position: absolute;
+    top: 110px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    width: 140px;
+    transition: all 0.3s ease;
+}
+
+.climate-control.expanded {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.climate-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--foreground);
+    cursor: pointer;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.climate-toggle-btn:hover {
+    background: var(--muted);
+    border-color: var(--primary);
+}
+
+.climate-toggle-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.climate-toggle-btn .icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.climate-toggle-btn .expand-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    transition: transform 0.3s ease;
+}
+
+.climate-control.expanded .expand-icon {
+    transform: rotate(180deg);
+}
+
+.climate-controls-content {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.control-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.control-select {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-select:hover {
+    border-color: var(--primary);
+}
+
+.control-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.percentile-buttons {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.percentile-btn {
+    flex: 1;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.percentile-btn:hover {
+    background: var(--muted);
+}
+
+.percentile-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.animation-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.time-slider {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--muted);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.time-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+}
+
+.slider-labels span:nth-child(2) {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.animation-buttons {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.anim-btn {
+    flex: 1;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.anim-btn:hover {
+    background: var(--muted);
+}
+
+.anim-btn .icon {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.color-scale-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.scale-gradient {
+    height: 16px;
+    border-radius: 0.25rem;
+    background: linear-gradient(to right, #1e40af, #3b82f6, #60a5fa, #fbbf24, #f59e0b, #ef4444, #dc2626);
+    border: 1px solid var(--border);
+}
+
+.scale-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+}
+
+/* Climate Tooltip */
+.climate-tooltip {
+    position: absolute;
+    background: white;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    z-index: 3000;
+    font-size: 0.875rem;
+    min-width: 150px;
+    display: none;
+}
+
+.tooltip-country {
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: 0.25rem;
+}
+
+.tooltip-iso {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    margin-bottom: 0.25rem;
+}
+
+.tooltip-temp {
+    font-weight: 500;
+    color: var(--primary);
+}
+
 /* Sentinel Control */
 .sentinel-control {
     position: absolute;
     right: 10px;
-    top: 110px;
+    top: 170px;
     z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    transition: top 0.3s ease;
     background: white;
     border-radius: 0.5rem;
     padding: 0.5rem;
@@ -865,17 +1129,89 @@ body {
     width: 140px;
 }
 
-/* Compact Calendar */
-.compact-calendar {
-    position: absolute;
-    right: 10px;
-    top: 360px;
-    z-index: 1000;
-    background: white;
+.sentinel-control.expanded {
+    max-height: 1000px;
+    overflow-y: auto;
+    /* Hide scrollbar but keep scrolling */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.sentinel-control.expanded::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.sentinel-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--foreground);
+    cursor: pointer;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.sentinel-toggle-btn:hover {
+    background: var(--muted);
+    border-color: var(--primary);
+}
+
+.sentinel-toggle-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.sentinel-toggle-btn .icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.sentinel-toggle-btn .expand-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    transition: transform 0.3s ease;
+}
+
+.sentinel-control.expanded .expand-icon {
+    transform: rotate(180deg);
+}
+
+.sentinel-controls-content {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.sentinel-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Compact Calendar (now inside Sentinel) */
+.sentinel-controls-content .compact-calendar {
+    position: relative;
+    right: auto;
+    top: auto;
+    z-index: auto;
+    background: var(--muted);
     border-radius: 0.375rem;
     padding: 0.375rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    width: 140px;
+    box-shadow: none;
+    width: 100%;
+    margin-top: 0.5rem;
+    border: 1px solid var(--border);
 }
 
 .compact-calendar-header {
@@ -1005,6 +1341,7 @@ body {
 }
 
 /* Product Selector Modal */
+/* Product Selector Modal (old - kept for backward compatibility) */
 .product-selector-modal {
     position: absolute;
     right: 10px;
@@ -1020,6 +1357,30 @@ body {
     /* Firefox scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--muted-foreground) var(--muted);
+}
+
+/* Product Selector Integrated (inside Sentinel) */
+.sentinel-controls-content .product-selector-integrated {
+    position: relative;
+    right: auto;
+    top: auto;
+    z-index: auto;
+    background: var(--muted);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    box-shadow: none;
+    width: 100%;
+    margin-top: 0.5rem;
+    border: 1px solid var(--border);
+    max-height: 280px;
+    overflow-y: auto;
+    /* Hide scrollbar but keep scrolling */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.sentinel-controls-content .product-selector-integrated::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 /* Webkit scrollbar (Chrome, Safari, Edge) */
@@ -1063,7 +1424,27 @@ body {
     text-align: center;
 }
 
+.product-selector-header-integrated {
+    margin-bottom: 0.375rem;
+    padding-bottom: 0.375rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.product-selector-header-integrated h4 {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin: 0;
+    text-align: center;
+}
+
 .product-selector-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.product-selector-body-integrated {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
