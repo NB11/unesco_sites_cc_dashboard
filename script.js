@@ -133,6 +133,9 @@ function initMap() {
                     } else {
                         console.error('loadWhc001CSV is not a function!', typeof loadWhc001CSV);
                     }
+
+                    // Load Climate Data and Boundaries
+                    loadClimateData();
                 } catch (error) {
                     console.error('Error in data loading functions:', error);
                 }
@@ -841,6 +844,9 @@ function renderDataTabCalendar() {
             const selectedMonth = parseInt(dayEl.dataset.month);
             const selectedYear = parseInt(dayEl.dataset.year);
             const clickedDate = new Date(selectedYear, selectedMonth, day);
+
+            // Prevent click from bubbling to document (which would close the calendar)
+            e.stopPropagation();
 
             let shouldCloseCalendar = false;
 

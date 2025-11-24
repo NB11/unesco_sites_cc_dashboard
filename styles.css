@@ -1133,12 +1133,15 @@ body {
     max-height: 1000px;
     overflow-y: auto;
     /* Hide scrollbar but keep scrolling */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 .sentinel-control.expanded::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 .sentinel-toggle-btn {
@@ -1375,12 +1378,15 @@ body {
     max-height: 280px;
     overflow-y: auto;
     /* Hide scrollbar but keep scrolling */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 .sentinel-controls-content .product-selector-integrated::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 /* Webkit scrollbar (Chrome, Safari, Edge) */
@@ -1672,7 +1678,7 @@ body {
     border-radius: 0.375rem !important;
     padding: 0.5rem !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-    width: 240px !important;
+    width: 200px !important;
     margin-top: 0 !important;
     left: 160px !important;
 }
@@ -2078,4 +2084,3 @@ body {
     font-weight: 600;
     color: var(--foreground);
 }
-
