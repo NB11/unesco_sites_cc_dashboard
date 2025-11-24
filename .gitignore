@@ -1,2 +1,6 @@
 data/world-administrative-boundaries.geojson
-data/ClimateImpactLab_tas_annual_ssp2_45_long.csv   
+data/ClimateImpactLab_tas_annual_ssp2_45_long.csv
+inspect_data.py
+inspect_data.js
+scripts/transform_data.js
+node_modules

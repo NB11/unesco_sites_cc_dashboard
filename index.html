@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UNESCO Heritage Site Climate Change Analytics</title>
-    
+
     <!-- Maplibre GL JS CSS -->
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
@@ -25,19 +27,22 @@
                     <div class="tabs-list">
                         <button class="tab-trigger active" data-tab="information">
                             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span>Information</span>
                         </button>
                         <button class="tab-trigger" data-tab="search">
                             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             <span>Search</span>
                         </button>
                         <button class="tab-trigger" data-tab="data">
                             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             <span>Data</span>
                         </button>
@@ -49,7 +54,8 @@
                         <div id="empty-site-state" class="empty-state">
                             <div class="empty-state-icon">
                                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                 </svg>
                             </div>
                             <p>Click on a heritage site marker to view its details</p>
@@ -60,30 +66,30 @@
                             <div class="site-details-header">
                                 <h2 id="site-name"></h2>
                             </div>
-                            
+
                             <div class="site-image-container">
                                 <img id="site-image" src="" alt="Site image" />
                             </div>
-                            
+
                             <div class="site-info-grid">
                                 <div class="site-info-item">
                                     <span class="site-info-label">Date Inscribed</span>
                                     <span class="site-info-value" id="site-date-inscribed"></span>
                                 </div>
-                                
+
                                 <div class="site-info-item">
                                     <span class="site-info-label">Danger Status</span>
                                     <span class="site-info-value" id="site-danger">
                                         <span class="danger-badge" id="danger-badge"></span>
                                     </span>
                                 </div>
-                                
+
                                 <div class="site-info-item">
                                     <span class="site-info-label">Category</span>
                                     <span class="site-info-value" id="site-category"></span>
                                 </div>
                             </div>
-                            
+
                             <div class="site-description">
                                 <h3>Description</h3>
                                 <p id="site-description-text"></p>
@@ -96,12 +102,14 @@
                         <div class="search-section">
                             <div class="search-input-wrapper">
                                 <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                <input type="text" id="site-search-input" class="search-input" placeholder="Search sites by name..." />
+                                <input type="text" id="site-search-input" class="search-input"
+                                    placeholder="Search sites by name..." />
                             </div>
                         </div>
-                        
+
                         <div class="filter-section">
                             <h4 class="filter-title">Filter by Category</h4>
                             <div class="filter-buttons">
@@ -119,7 +127,7 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div class="filter-section">
                             <h4 class="filter-title">Filter by Danger Status</h4>
                             <div class="filter-buttons">
@@ -134,7 +142,7 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div class="search-results">
                             <div class="results-header">
                                 <span class="results-count" id="results-count">0 sites found</span>
@@ -152,37 +160,43 @@
                                 <div class="date-range-display-compact">
                                     <span class="date-range-label-compact">Range:</span>
                                     <div class="date-inputs-wrapper">
-                                        <input type="text" class="date-input" id="start-date-input" placeholder="dd/mm/yyyy" />
+                                        <input type="text" class="date-input" id="start-date-input"
+                                            placeholder="dd/mm/yyyy" />
                                         <span class="date-separator">to</span>
-                                        <input type="text" class="date-input" id="end-date-input" placeholder="dd/mm/yyyy" />
-                                        <button class="calendar-icon-btn" id="data-range-calendar-btn" title="Select date range">
+                                        <input type="text" class="date-input" id="end-date-input"
+                                            placeholder="dd/mm/yyyy" />
+                                        <button class="calendar-icon-btn" id="data-range-calendar-btn"
+                                            title="Select date range">
                                             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Data Tab Calendar Popup -->
                             <div class="compact-calendar" id="data-tab-calendar" style="display: none;">
                                 <div class="compact-calendar-header">
                                     <button class="compact-calendar-nav-btn" id="data-calendar-prev">
                                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 19l-7-7 7-7" />
                                         </svg>
                                     </button>
                                     <span class="compact-calendar-month-year" id="data-calendar-month-year"></span>
                                     <button class="compact-calendar-nav-btn" id="data-calendar-next">
                                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
                                         </svg>
                                     </button>
                                 </div>
                                 <div class="compact-calendar-weekdays" id="data-calendar-weekdays"></div>
                                 <div class="compact-calendar-days" id="data-calendar-days"></div>
                             </div>
-                            
+
                             <!-- Mock Visualizations -->
                             <div id="mock-visualizations" style="display: none; margin-top: 1.5rem;">
                                 <!-- Small Climate Risk Level at Top -->
@@ -195,7 +209,7 @@
                                         <div class="risk-compact-fill" id="risk-compact-fill" style="width: 78%;"></div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Sub-tabs -->
                                 <div class="sub-tabs-container">
                                     <div class="sub-tabs-list">
@@ -209,39 +223,42 @@
                                             <span>Environmental</span>
                                         </button>
                                     </div>
-                                    
+
                                     <!-- Social Sub-tab -->
                                     <div class="sub-tab-content active" id="subtab-social">
                                         <!-- Tourist Histogram -->
                                         <div class="visualization-card">
                                             <div class="viz-header">
                                                 <h4>Tourist Visits</h4>
-                                                <span class="viz-subtitle">Number of tourists over selected period</span>
+                                                <span class="viz-subtitle">Number of tourists over selected
+                                                    period</span>
                                             </div>
                                             <div class="histogram-container">
-                                                <svg class="histogram-chart" id="tourist-histogram" viewBox="0 0 300 150" preserveAspectRatio="none">
+                                                <svg class="histogram-chart" id="tourist-histogram"
+                                                    viewBox="0 0 300 150" preserveAspectRatio="none">
                                                     <!-- Bars will be generated by JavaScript -->
                                                 </svg>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- Add more social visualizations here -->
                                     </div>
-                                    
+
                                     <!-- Economical Sub-tab -->
                                     <div class="sub-tab-content" id="subtab-economical">
                                         <!-- Add economical visualizations here -->
                                         <div class="visualization-card">
                                             <div class="viz-header">
                                                 <h4>Economic Impact</h4>
-                                                <span class="viz-subtitle">Economic indicators over selected period</span>
+                                                <span class="viz-subtitle">Economic indicators over selected
+                                                    period</span>
                                             </div>
                                             <div class="placeholder-viz">
                                                 <p>Economic data visualizations will appear here</p>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Environmental Sub-tab -->
                                     <div class="sub-tab-content" id="subtab-environmental">
                                         <!-- Sea Level & Temperature Line Plot -->
@@ -251,7 +268,8 @@
                                                 <span class="viz-subtitle">Changes over selected period</span>
                                             </div>
                                             <div class="lineplot-container">
-                                                <svg class="lineplot-chart" id="climate-lineplot" viewBox="0 0 300 180" preserveAspectRatio="none">
+                                                <svg class="lineplot-chart" id="climate-lineplot" viewBox="0 0 300 180"
+                                                    preserveAspectRatio="none">
                                                     <!-- Lines will be generated by JavaScript -->
                                                 </svg>
                                                 <div class="lineplot-legend">
@@ -266,7 +284,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- Add more environmental visualizations here -->
                                     </div>
                                 </div>
@@ -282,29 +300,32 @@
 
         <!-- Map Container -->
         <div class="map-container">
-            <div id="map"></div>
-            
+            <div id="map-view"></div>
+
             <!-- Layer Control -->
             <div class="layer-control">
                 <button class="layer-btn active" data-layer="osm" id="layer-osm">
                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                     </svg>
                     <span>Map</span>
                 </button>
                 <button class="layer-btn" data-layer="satellite" id="layer-satellite">
                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>Satellite</span>
                 </button>
             </div>
-            
+
             <!-- Climate Control -->
             <div class="climate-control" id="climate-control">
                 <button class="climate-toggle-btn" id="climate-toggle-btn">
                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
                     </svg>
                     <span>Climate</span>
                     <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -321,7 +342,7 @@
                             <option value="2080-2099">End of Century (2080-2099)</option>
                         </select>
                     </div>
-                    
+
                     <div class="control-group">
                         <label class="control-label">Percentile</label>
                         <div class="percentile-buttons">
@@ -330,11 +351,12 @@
                             <button class="percentile-btn" data-percentile="95">95th</button>
                         </div>
                     </div>
-                    
+
                     <div class="control-group">
                         <label class="control-label">Animation</label>
                         <div class="animation-controls">
-                            <input type="range" id="climate-time-slider" class="time-slider" min="1986" max="2099" value="2000" step="1" />
+                            <input type="range" id="climate-time-slider" class="time-slider" min="1986" max="2099"
+                                value="2000" step="1" />
                             <div class="slider-labels">
                                 <span>1986</span>
                                 <span id="slider-current-year">2000</span>
@@ -343,21 +365,24 @@
                             <div class="animation-buttons">
                                 <button id="play-animation" class="anim-btn">
                                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     Play
                                 </button>
                                 <button id="pause-animation" class="anim-btn" style="display: none;">
                                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     Pause
                                 </button>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="control-group">
                         <label class="control-label">Color Scale</label>
                         <div class="color-scale-legend" id="color-scale-legend">
@@ -368,15 +393,16 @@
                             </div>
                         </div>
                     </div>
-                    
+
                 </div>
             </div>
-            
+
             <!-- Sentinel Control -->
             <div class="sentinel-control" id="sentinel-control">
                 <button class="sentinel-toggle-btn" id="sentinel-toggle-btn">
                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                     <span>Sentinel</span>
                     <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,26 +427,28 @@
                             <span>Sentinel 6</span>
                         </button>
                     </div>
-                    
+
                     <!-- Compact Calendar integrated in Sentinel -->
                     <div class="compact-calendar" id="compact-calendar" style="display: none;">
                         <div class="compact-calendar-header">
                             <button class="compact-calendar-nav-btn" id="compact-calendar-prev">
                                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 19l-7-7 7-7" />
                                 </svg>
                             </button>
                             <span class="compact-calendar-month-year" id="compact-calendar-month-year"></span>
                             <button class="compact-calendar-nav-btn" id="compact-calendar-next">
                                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
                         </div>
                         <div class="compact-calendar-weekdays" id="compact-calendar-weekdays"></div>
                         <div class="compact-calendar-days" id="compact-calendar-days"></div>
                     </div>
-                    
+
                     <!-- Product Selector integrated in Sentinel -->
                     <div class="product-selector-integrated" id="product-selector-modal" style="display: none;">
                         <div class="product-selector-header-integrated">
@@ -432,42 +460,31 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="map-placeholder hidden" id="map-placeholder">
-                <div class="placeholder-content">
-                    <div class="placeholder-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                        </svg>
-                    </div>
-                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">No Routes Loaded</h3>
-                    <p style="color: var(--muted-foreground);">Upload a GPX file to visualize your cycling routes</p>
-                </div>
-            </div>
+
         </div>
     </div>
 
     <!-- Maplibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-    
+
     <!-- SheetJS for Excel parsing -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    
+
     <!-- Custom JavaScript -->
     <script src="script.js"></script>
     <script type="module">
         // Load parquet-wasm as ES module
         import init, { readParquet } from 'https://cdn.jsdelivr.net/npm/parquet-wasm@0.7.0/esm/index.js';
-        
+
         // Initialize and make available globally
         await init();
         window.parquetWasm = { readParquet };
-        
+
         // Trigger UNESCO sites loading after parquet-wasm is ready
         if (window.map && !window.unescoSitesLoaded) {
             window.loadUnescoSites();
         }
     </script>
 </body>
-</html>
 
+</html>

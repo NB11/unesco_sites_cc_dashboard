@@ -593,7 +593,7 @@ body {
     visibility: visible !important;
 }
 
-#map {
+#map-view {
     width: 100% !important;
     height: 100% !important;
     position: absolute;
