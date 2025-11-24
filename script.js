@@ -97,7 +97,9 @@ function initMap() {
 
     // Wait for map to load AND style to load before loading default GPX
     map.on('load', function () {
-        console.log('Map load event fired');
+        console.log('[DEBUG] Map load event fired');
+        console.log('[DEBUG] Map loaded:', map.loaded());
+        console.log('[DEBUG] Map style loaded:', map.isStyleLoaded());
         // Ensure placeholder is hidden
         if (mapPlaceholder) {
             mapPlaceholder.classList.add('hidden');
@@ -1753,6 +1755,17 @@ function addWhc001PointsToMap(sitesData) {
         });
         console.log('Layer added successfully');
         console.log('Map should now show', geojson.features.length, 'points');
+        
+        // Ensure choropleth layer (if it exists) is below the points layer
+        if (map.getLayer('climate-choropleth')) {
+            // Move choropleth before points layer to ensure points render on top
+            try {
+                map.moveLayer('climate-choropleth', 'whc001-layer');
+                console.log('[DEBUG] Moved climate-choropleth below whc001-layer');
+            } catch (error) {
+                console.warn('[DEBUG] Could not reorder choropleth layer:', error);
+            }
+        }
 
         // Verify layer was added
         if (map.getLayer('whc001-layer')) {
@@ -2069,7 +2082,7 @@ function displaySiteDetails(siteData, climateData = null) {
             climateContainer.innerHTML = `
                 <div class="climate-metric">
                     <span class="metric-label">Projected Annual Temp</span>
-                    <span class="metric-value">${climateData.temperature.toFixed(1)}°F</span>
+                    <span class="metric-value">${fahrenheitToCelsius(climateData.temperature).toFixed(1)}°C</span>
                 </div>
                 <div class="climate-context">
                     Based on current selection (${climateData.country || 'Region'})
@@ -2093,7 +2106,7 @@ function displaySiteDetails(siteData, climateData = null) {
                 <h4 style="margin-top:0; margin-bottom:0.5rem; font-size:0.9rem; color:var(--primary);">Climate Projection</h4>
                 <div class="climate-metric" style="display:flex; justify-content:space-between; align-items:center;">
                     <span class="metric-label" style="font-size:0.85rem; color:var(--muted-foreground);">Annual Avg Temp</span>
-                    <span class="metric-value" style="font-weight:600; font-size:1.1rem;">${climateData.temperature.toFixed(1)}°F</span>
+                    <span class="metric-value" style="font-weight:600; font-size:1.1rem;">${fahrenheitToCelsius(climateData.temperature).toFixed(1)}°C</span>
                 </div>
             `;
             categoryEl.parentNode.parentNode.insertBefore(container, categoryEl.parentNode.parentNode.children[2]); // Insert after header section
@@ -2173,9 +2186,6 @@ document.addEventListener('DOMContentLoaded', () => {
 let climateLayer = null;
 let selectedTimePeriod = '1986-2005';
 let selectedPercentile = 5;
-let isAnimating = false;
-let animationInterval = null;
-let currentYear = 2000;
 
 // Initialize Climate Control Toggle
 function initializeClimateControl() {
@@ -2187,9 +2197,11 @@ function initializeClimateControl() {
 
     toggleBtn.addEventListener('click', () => {
         const isExpanded = climateControl.classList.contains('expanded');
+        console.log('[DEBUG] Climate toggle clicked, isExpanded:', isExpanded);
 
         if (isExpanded) {
             // Collapse
+            console.log('[DEBUG] Collapsing climate control');
             climateControl.classList.remove('expanded');
             toggleBtn.classList.remove('active');
             controlsContent.style.display = 'none';
@@ -2201,6 +2213,7 @@ function initializeClimateControl() {
             updateSentinelPosition(false);
         } else {
             // Expand
+            console.log('[DEBUG] Expanding climate control');
             climateControl.classList.add('expanded');
             toggleBtn.classList.add('active');
             controlsContent.style.display = 'flex';
@@ -2223,73 +2236,20 @@ function initializeClimateControl() {
         });
     });
 
-    // Setup time period selector
-    const timePeriodSelect = document.getElementById('climate-time-period');
-    if (timePeriodSelect) {
-        timePeriodSelect.addEventListener('change', (e) => {
-            selectedTimePeriod = e.target.value;
-            updateSliderRange(e.target.value);
+    // Setup time period buttons
+    document.querySelectorAll('.time-period-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all buttons
+            document.querySelectorAll('.time-period-btn').forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            // Update selected time period
+            selectedTimePeriod = btn.dataset.period;
+            console.log('[DEBUG] Time period changed to:', selectedTimePeriod);
+            // Update visualization
             updateClimateVisualization();
         });
-    }
-
-    // Update slider range based on time period
-    function updateSliderRange(timePeriod) {
-        const slider = document.getElementById('climate-time-slider');
-        if (!slider) return;
-
-        if (timePeriod === '1986-2005') {
-            slider.min = 1986;
-            slider.max = 2005;
-            slider.value = 1995;
-        } else if (timePeriod === '2020-2039') {
-            slider.min = 2020;
-            slider.max = 2039;
-            slider.value = 2030;
-        } else if (timePeriod === '2040-2059') {
-            slider.min = 2040;
-            slider.max = 2059;
-            slider.value = 2050;
-        } else if (timePeriod === '2080-2099') {
-            slider.min = 2080;
-            slider.max = 2099;
-            slider.value = 2090;
-        }
-
-        const sliderYear = document.getElementById('slider-current-year');
-        if (sliderYear) {
-            sliderYear.textContent = slider.value;
-        }
-        currentYear = parseInt(slider.value);
-    }
-
-    // Setup time slider
-    const timeSlider = document.getElementById('climate-time-slider');
-    const sliderYear = document.getElementById('slider-current-year');
-    if (timeSlider && sliderYear) {
-        timeSlider.addEventListener('input', (e) => {
-            const year = parseInt(e.target.value);
-            sliderYear.textContent = year;
-            currentYear = year;
-            updateClimateVisualization();
-        });
-    }
-
-    // Setup animation buttons
-    const playBtn = document.getElementById('play-animation');
-    const pauseBtn = document.getElementById('pause-animation');
-
-    if (playBtn) {
-        playBtn.addEventListener('click', () => {
-            startAnimation();
-        });
-    }
-
-    if (pauseBtn) {
-        pauseBtn.addEventListener('click', () => {
-            stopAnimation();
-        });
-    }
+    });
 
     // Debug logging
     if (!window.debugLogs) window.debugLogs = [];
@@ -2310,6 +2270,8 @@ function initializeClimateControl() {
 
 // Load Climate Data from CSV and GeoJSON
 async function loadClimateData() {
+    console.log('[DEBUG] ===== loadClimateData() called =====');
+    console.log('[DEBUG] Timestamp:', new Date().toISOString());
     try {
         // Load CSV data
         const csvResponse = await fetch('data/climate_impact_data.csv');
@@ -2334,19 +2296,30 @@ async function loadClimateData() {
             }
         }
 
-        console.log('Climate CSV data loaded:', csvData.length, 'rows (filtered for tas_annual)');
-        console.log('Sample CSV data:', csvData[0]);
+        console.log('[DEBUG] Climate CSV data loaded:', csvData.length, 'rows (filtered for tas_annual)');
+        console.log('[DEBUG] Sample CSV data:', csvData[0]);
+        console.log('[DEBUG] Sample CSV ISO codes (first 10):', csvData.slice(0, 10).map(r => r.ISO.trim()));
 
         // Validate that only tas_annual metric is included
         const metrics = new Set(csvData.map(r => r.Metric));
-        console.log('Metrics in filtered data:', Array.from(metrics));
+        console.log('[DEBUG] Metrics in filtered data:', Array.from(metrics));
 
         // Load GeoJSON boundaries
         const geoJsonResponse = await fetch('data/world-administrative-boundaries.geojson');
         const geoJsonData = await geoJsonResponse.json();
 
-        console.log('GeoJSON boundaries loaded:', geoJsonData.features.length, 'features');
-        console.log('Sample GeoJSON feature:', geoJsonData.features[0]);
+        console.log('[DEBUG] GeoJSON boundaries loaded:', geoJsonData.features.length, 'features');
+        console.log('[DEBUG] Sample GeoJSON feature:', geoJsonData.features[0]);
+        console.log('[DEBUG] Sample GeoJSON color_code values (first 10):', 
+            geoJsonData.features.slice(0, 10).map(f => f.properties.color_code));
+        
+        // Check for unique ISO codes in CSV
+        const csvIsoCodes = new Set(csvData.map(r => r.ISO.trim()));
+        console.log('[DEBUG] Unique ISO codes in CSV:', csvIsoCodes.size);
+        
+        // Check for unique color_codes in GeoJSON
+        const geoJsonIsoCodes = new Set(geoJsonData.features.map(f => f.properties.color_code));
+        console.log('[DEBUG] Unique color_code values in GeoJSON:', geoJsonIsoCodes.size);
 
         // Store data
         climateData = csvData;
@@ -2355,20 +2328,32 @@ async function loadClimateData() {
         // Process and visualize data
         processClimateData();
 
+        console.log('[DEBUG] Checking map state for choropleth creation:');
+        console.log('[DEBUG]   map exists:', !!map);
+        console.log('[DEBUG]   map.loaded():', map ? map.loaded() : 'N/A');
+        console.log('[DEBUG]   map.isStyleLoaded():', map ? map.isStyleLoaded() : 'N/A');
+
         // If map is already loaded, create the choropleth layer immediately
         if (map && map.loaded() && map.isStyleLoaded()) {
+            console.log('[DEBUG] Map is ready, creating choropleth layer immediately');
             setTimeout(() => {
+                console.log('[DEBUG] Executing delayed choropleth creation (map ready path)');
                 createChoroplethMap();
                 updateClimateVisualization();
             }, 500);
         } else if (map) {
+            console.log('[DEBUG] Map not ready, waiting for load event');
             // Otherwise wait for map to load
             map.once('load', () => {
+                console.log('[DEBUG] Map load event received, creating choropleth layer');
                 setTimeout(() => {
+                    console.log('[DEBUG] Executing delayed choropleth creation (load event path)');
                     createChoroplethMap();
                     updateClimateVisualization();
                 }, 500);
             });
+        } else {
+            console.warn('[DEBUG] Map not available, cannot create choropleth layer');
         }
     } catch (error) {
         console.error('Error loading climate data:', error);
@@ -2378,8 +2363,9 @@ async function loadClimateData() {
 
 // Process Climate Data
 function processClimateData() {
+    console.log('[DEBUG] ===== processClimateData() called =====');
     if (!climateData || !climateBoundaries || !map) {
-        console.log('Waiting for climate data and boundaries...', {
+        console.log('[DEBUG] Waiting for climate data and boundaries...', {
             hasData: !!climateData,
             hasBoundaries: !!climateBoundaries,
             hasMap: !!map
@@ -2387,29 +2373,51 @@ function processClimateData() {
         return;
     }
 
-    console.log('Processing climate data...');
+    console.log('[DEBUG] Processing climate data...');
 
     // Create a lookup map: ISO -> { timePeriod -> { percentile -> value } }
     const dataLookup = {};
 
     climateData.forEach(row => {
-        const iso = row.ISO.trim();
+        const identifier = row.ISO.trim(); // Can be country code (e.g., "USA") or regional code (e.g., "USA-CA")
         const timePeriod = row.Period.trim();
 
-        if (!dataLookup[iso]) {
-            dataLookup[iso] = {};
+        if (!dataLookup[identifier]) {
+            dataLookup[identifier] = {};
         }
-        if (!dataLookup[iso][timePeriod]) {
-            dataLookup[iso][timePeriod] = {};
+        if (!dataLookup[identifier][timePeriod]) {
+            dataLookup[identifier][timePeriod] = {};
         }
 
         // Store percentiles: 0.05 (Low), 0.5 (Median), 0.95 (High)
-        dataLookup[iso][timePeriod][0.05] = parseFloat(row.Value_Low);
-        dataLookup[iso][timePeriod][0.5] = parseFloat(row.Value_Median);
-        dataLookup[iso][timePeriod][0.95] = parseFloat(row.Value_High);
+        dataLookup[identifier][timePeriod][0.05] = parseFloat(row.Value_Low);
+        dataLookup[identifier][timePeriod][0.5] = parseFloat(row.Value_Median);
+        dataLookup[identifier][timePeriod][0.95] = parseFloat(row.Value_High);
     });
+    
+    // Log statistics about data types
+    const identifiers = Object.keys(dataLookup);
+    const regionalIdentifiers = identifiers.filter(id => id.includes('-') || id.length > 3);
+    const countryIdentifiers = identifiers.filter(id => !id.includes('-') && id.length === 3);
+    
+    console.log('[DEBUG] Data lookup statistics:');
+    console.log('[DEBUG]   - Total identifiers:', identifiers.length);
+    console.log('[DEBUG]   - Country-level identifiers:', countryIdentifiers.length);
+    console.log('[DEBUG]   - Regional-level identifiers:', regionalIdentifiers.length);
+    if (regionalIdentifiers.length > 0) {
+        console.log('[DEBUG]   - Sample regional identifiers:', regionalIdentifiers.slice(0, 10));
+    }
 
-    console.log('Data lookup created for', Object.keys(dataLookup).length, 'countries');
+    console.log('[DEBUG] Data lookup created for', Object.keys(dataLookup).length, 'countries');
+    
+    // Debug: Log sample lookup structure
+    const sampleIso = Object.keys(dataLookup)[0];
+    if (sampleIso) {
+        console.log('[DEBUG] Sample lookup structure for', sampleIso + ':', dataLookup[sampleIso]);
+    }
+    
+    // Debug: Log all ISO codes in lookup
+    console.log('[DEBUG] ISO codes in lookup:', Object.keys(dataLookup).slice(0, 20), '... (showing first 20)');
 
     // Store lookup for use in visualization
     window.climateDataLookup = dataLookup;
@@ -2419,44 +2427,72 @@ function processClimateData() {
 
 // Create Choropleth Map Layer
 function createChoroplethMap() {
-    console.log('createChoroplethMap called', {
+    console.log('[DEBUG] createChoroplethMap called', {
         hasBoundaries: !!climateBoundaries,
         hasMap: !!map,
-        mapLoaded: map ? map.loaded() : false
+        mapLoaded: map ? map.loaded() : false,
+        mapStyleLoaded: map ? map.isStyleLoaded() : false
     });
 
     if (!climateBoundaries || !map) {
-        console.warn('Missing climateBoundaries or map');
+        console.warn('[DEBUG] Missing climateBoundaries or map');
         return;
     }
 
     if (!map.loaded()) {
-        console.warn('Map not loaded yet');
+        console.warn('[DEBUG] Map not loaded yet');
+        return;
+    }
+    
+    if (!map.isStyleLoaded()) {
+        console.warn('[DEBUG] Map style not loaded yet');
         return;
     }
 
     try {
         // Add source if it doesn't exist
         if (!map.getSource('climate-boundaries')) {
+            console.log('[DEBUG] Adding climate-boundaries source');
             map.addSource('climate-boundaries', {
                 type: 'geojson',
                 data: climateBoundaries
             });
+            console.log('[DEBUG] Source added successfully');
         } else {
+            console.log('[DEBUG] Source climate-boundaries already exists');
+        }
+        
+        // Verify source exists
+        const source = map.getSource('climate-boundaries');
+        if (source) {
+            console.log('[DEBUG] Source verified:', source.type);
+        } else {
+            console.error('[DEBUG] Source verification failed!');
         }
 
         // Remove layer if it exists to ensure fresh creation
         if (map.getLayer('climate-choropleth')) {
+            console.log('[DEBUG] Removing existing climate-choropleth layer');
             map.removeLayer('climate-choropleth');
         }
 
-        // Find the first symbol layer to place the choropleth below labels
+        // Find where to place the choropleth layer
+        // Priority: 1) Before points layer (whc001-layer), 2) Before symbol layers
         let beforeId;
-        const layers = map.getStyle().layers;
-        for (let i = 0; i < layers.length; i++) {
-            if (layers[i].type === 'symbol') {
-                beforeId = layers[i].id;
-                break;
+        
+        // First, check if the points layer exists - we want choropleth BELOW points
+        if (map.getLayer('whc001-layer')) {
+            beforeId = 'whc001-layer';
+            console.log('[DEBUG] Placing choropleth before whc001-layer (points layer)');
+        } else {
+            // Fall back to symbol layers if points layer doesn't exist yet
+            const layers = map.getStyle().layers;
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol') {
+                    beforeId = layers[i].id;
+                    console.log('[DEBUG] Placing choropleth before symbol layer:', beforeId);
+                    break;
+                }
             }
         }
 
@@ -2474,12 +2510,12 @@ function createChoroplethMap() {
                     'interpolate',
                     ['linear'],
                     ['get', 'temperature'],
-                    20, '#2b83ba',    // Deep Teal (Cold)
-                    35, '#80bfab',    // Teal-Green
-                    50, '#c7e9ad',    // Light Green
-                    65, '#ffffbf',    // Yellow
-                    80, '#fdae61',    // Orange
-                    95, '#d7191c'     // Red (Hot)
+                    -7, '#2b83ba',    // Deep Teal (Cold) - ~20°F = -6.7°C
+                    2, '#80bfab',     // Teal-Green - ~35°F = 1.7°C
+                    10, '#c7e9ad',    // Light Green - ~50°F = 10°C
+                    18, '#ffffbf',     // Yellow - ~65°F = 18.3°C
+                    27, '#fdae61',    // Orange - ~80°F = 26.7°C
+                    35, '#d7191c'     // Red (Hot) - ~95°F = 35°C
                 ],
                 'fill-opacity': [
                     'case',
@@ -2487,21 +2523,25 @@ function createChoroplethMap() {
                     0,  // Transparent for missing data
                     0.7  // Slightly more opaque
                 ],
-                'fill-outline-color': '#ffffff',
-                'fill-outline-width': 0.5
+                'fill-outline-color': '#ffffff'
             }
         }, beforeId); // Add before points layer so it's visible
 
-        console.log('Choropleth map layer created successfully');
+        console.log('[DEBUG] Choropleth map layer created successfully');
 
         // Verify layer was added
-        if (map.getLayer('climate-choropleth')) {
-            console.log('✓ Climate choropleth layer verified on map');
+        const layer = map.getLayer('climate-choropleth');
+        if (layer) {
+            console.log('[DEBUG] ✓ Climate choropleth layer verified on map');
+            console.log('[DEBUG]   Layer ID:', layer.id);
+            console.log('[DEBUG]   Layer type:', layer.type);
+            console.log('[DEBUG]   Layer visibility:', map.getLayoutProperty('climate-choropleth', 'visibility'));
         } else {
-            console.error('✗ Climate choropleth layer NOT found on map!');
+            console.error('[DEBUG] ✗ Climate choropleth layer NOT found on map!');
         }
     } catch (error) {
-        console.error('Error adding choropleth layer:', error);
+        console.error('[DEBUG] Error adding choropleth layer:', error);
+        console.error('[DEBUG] Error stack:', error.stack);
     }
 
     // Tooltips removed as per user request
@@ -2509,18 +2549,25 @@ function createChoroplethMap() {
 
 }
 
+// Convert Fahrenheit to Celsius
+function fahrenheitToCelsius(f) {
+    return (f - 32) * 5 / 9;
+}
+
 // Update Climate Visualization
 function updateClimateVisualization() {
+    console.log('[DEBUG] ===== updateClimateVisualization() called =====');
     if (!climateData || !climateBoundaries || !map || !window.climateDataLookup) {
-        console.log('Cannot update visualization - missing data');
+        console.log('[DEBUG] Cannot update visualization - missing data', {
+            hasClimateData: !!climateData,
+            hasBoundaries: !!climateBoundaries,
+            hasMap: !!map,
+            hasLookup: !!window.climateDataLookup
+        });
         return;
     }
 
-    // Get current year from slider
-    const slider = document.getElementById('climate-time-slider');
-    currentYear = parseInt(slider?.value || 2000);
-
-    // Map time period to year range (matching CSV format)
+    // Map selectedTimePeriod to CSV time period key format
     let timePeriodKey = '';
     if (selectedTimePeriod === '1986-2005') {
         timePeriodKey = 'Historical 1986-2005';
@@ -2530,16 +2577,36 @@ function updateClimateVisualization() {
         timePeriodKey = 'Midcentury 2040-2059';
     } else if (selectedTimePeriod === '2080-2099') {
         timePeriodKey = 'End of century 2080-2099';
+    } else {
+        // Default fallback
+        timePeriodKey = 'Historical 1986-2005';
     }
+    
+    console.log('[DEBUG] Time period selected:', {
+        selectedTimePeriod: selectedTimePeriod,
+        timePeriodKey: timePeriodKey
+    });
 
     // Map percentile
     const percentileKey = selectedPercentile === 5 ? 0.05 : selectedPercentile === 50 ? 0.5 : 0.95;
 
     // Update GeoJSON features with temperature values
+    // Support hierarchical matching: regional data → country data → default
+    let matchedCount = 0;
+    let regionalMatches = 0;
+    let countryMatches = 0;
+    let unmatchedIsos = [];
     const updatedFeatures = climateBoundaries.features.map(feature => {
-        const iso3 = feature.properties.color_code; // Use color_code as it contains the ISO3
         const dataLookup = window.climateDataLookup;
-
+        
+        // Try to get regional identifier first (e.g., from admin_code, region_code, or similar properties)
+        // Then fall back to country code (color_code)
+        const regionalId = feature.properties.admin_code || 
+                          feature.properties.region_code || 
+                          feature.properties.subdivision_code || 
+                          null;
+        const countryCode = feature.properties.color_code; // ISO3 country code
+        
         // Create a new feature object (don't mutate original)
         const newFeature = {
             ...feature,
@@ -2548,19 +2615,52 @@ function updateClimateVisualization() {
             }
         };
 
-        if (dataLookup && dataLookup[iso3] && dataLookup[iso3][timePeriodKey]) {
-            const tempValue = dataLookup[iso3][timePeriodKey][percentileKey];
+        let tempValue = null;
+        let matchedAtLevel = null;
+
+        // Try regional match first (if regional identifier exists)
+        if (regionalId && dataLookup && dataLookup[regionalId] && dataLookup[regionalId][timePeriodKey]) {
+            tempValue = dataLookup[regionalId][timePeriodKey][percentileKey];
             if (tempValue !== undefined && tempValue !== null) {
-                newFeature.properties.temperature = tempValue;
-            } else {
-                newFeature.properties.temperature = 0; // Default to 0 for missing data
+                matchedAtLevel = 'regional';
+                regionalMatches++;
             }
+        }
+        
+        // Fall back to country-level match if regional match failed
+        if (!matchedAtLevel && countryCode && dataLookup && dataLookup[countryCode] && dataLookup[countryCode][timePeriodKey]) {
+            tempValue = dataLookup[countryCode][timePeriodKey][percentileKey];
+            if (tempValue !== undefined && tempValue !== null) {
+                matchedAtLevel = 'country';
+                countryMatches++;
+            }
+        }
+
+        // Assign temperature value (convert from Fahrenheit to Celsius) or default to 0
+        if (matchedAtLevel) {
+            // Convert from Fahrenheit to Celsius for display
+            newFeature.properties.temperature = fahrenheitToCelsius(tempValue);
+            matchedCount++;
         } else {
             newFeature.properties.temperature = 0; // Default to 0 for missing data
+            const identifier = regionalId || countryCode;
+            if (identifier && !unmatchedIsos.includes(identifier)) {
+                unmatchedIsos.push(identifier);
+            }
         }
 
         return newFeature;
     });
+    
+    console.log('[DEBUG] Data Matching Results:');
+    console.log('[DEBUG]   - Total features with matched temperature data:', matchedCount, 'out of', updatedFeatures.length);
+    console.log('[DEBUG]   - Regional-level matches:', regionalMatches);
+    console.log('[DEBUG]   - Country-level matches:', countryMatches);
+    console.log('[DEBUG]   - Unmatched identifiers (first 20):', unmatchedIsos.slice(0, 20));
+    if (unmatchedIsos.length > 0) {
+        console.log('[DEBUG]   - Sample unmatched identifier:', unmatchedIsos[0], 
+            '- Available in lookup?', window.climateDataLookup && window.climateDataLookup[unmatchedIsos[0]] ? 'YES' : 'NO');
+    }
 
     // Update the source data
     const source = map.getSource('climate-boundaries');
@@ -2572,11 +2672,41 @@ function updateClimateVisualization() {
 
         // Count features with valid temperature data
         const validTemps = updatedFeatures.filter(f => f.properties.temperature > 0);
-        console.log(`Updated ${validTemps.length} features with temperature data (out of ${updatedFeatures.length} total)`);
+        console.log(`[DEBUG] Updated ${validTemps.length} features with temperature data (out of ${updatedFeatures.length} total)`);
 
         if (validTemps.length > 0) {
             const temps = validTemps.map(f => f.properties.temperature);
-            console.log(`Temperature range: ${Math.min(...temps).toFixed(1)}°F - ${Math.max(...temps).toFixed(1)}°F`);
+            const minTemp = Math.min(...temps);
+            const maxTemp = Math.max(...temps);
+            console.log(`[DEBUG] Temperature range: ${minTemp.toFixed(1)}°C - ${maxTemp.toFixed(1)}°C`);
+            
+            // Check if values are within color scale range (-7 to 35°C, converted from 20-95°F)
+            const colorScaleMin = -7;
+            const colorScaleMax = 35;
+            console.log(`[DEBUG] Color scale range: ${colorScaleMin}°C - ${colorScaleMax}°C`);
+            
+            const belowRange = temps.filter(t => t < colorScaleMin).length;
+            const aboveRange = temps.filter(t => t > colorScaleMax).length;
+            const inRange = temps.filter(t => t >= colorScaleMin && t <= colorScaleMax).length;
+            
+            console.log(`[DEBUG] Temperature values: ${belowRange} below range, ${inRange} in range, ${aboveRange} above range`);
+            
+            if (belowRange > 0) {
+                const belowTemps = temps.filter(t => t < colorScaleMin);
+                console.warn(`[DEBUG] ⚠️ ${belowRange} values below color scale minimum:`, 
+                    `min=${Math.min(...belowTemps).toFixed(1)}°C`);
+            }
+            if (aboveRange > 0) {
+                const aboveTemps = temps.filter(t => t > colorScaleMax);
+                console.warn(`[DEBUG] ⚠️ ${aboveRange} values above color scale maximum:`, 
+                    `max=${Math.max(...aboveTemps).toFixed(1)}°C`);
+            }
+            
+            // Log sample temperature values
+            console.log('[DEBUG] Sample temperature values (first 10):', 
+                validTemps.slice(0, 10).map(f => ({iso: f.properties.color_code, temp: f.properties.temperature.toFixed(1)})));
+        } else {
+            console.warn('[DEBUG] ⚠️ No features with valid temperature data!');
         }
     } else {
         console.warn('Climate boundaries source not found - layer may not be created yet');
@@ -2585,10 +2715,13 @@ function updateClimateVisualization() {
     // Update color scale legend
     updateColorScaleLegend();
 
-    console.log('Visualization updated:', {
+    // Recalculate validTemps for logging (it was defined in the source.setData block)
+    const validTempsForLog = updatedFeatures.filter(f => f.properties.temperature > 0);
+    console.log('[DEBUG] Visualization updated:', {
         timePeriod: timePeriodKey,
         percentile: percentileKey,
-        year: currentYear
+        featuresUpdated: updatedFeatures.length,
+        featuresWithData: validTempsForLog.length
     });
 }
 
@@ -2619,8 +2752,11 @@ function updateColorScaleLegend() {
         const scaleMin = document.getElementById('scale-min');
         const scaleMax = document.getElementById('scale-max');
 
-        if (scaleMin) scaleMin.textContent = `${minTemp.toFixed(1)}°F`;
-        if (scaleMax) scaleMax.textContent = `${maxTemp.toFixed(1)}°F`;
+        // Convert from Fahrenheit to Celsius for display
+        const minTempC = fahrenheitToCelsius(minTemp);
+        const maxTempC = fahrenheitToCelsius(maxTemp);
+        if (scaleMin) scaleMin.textContent = `${minTempC.toFixed(1)}°C`;
+        if (scaleMax) scaleMax.textContent = `${maxTempC.toFixed(1)}°C`;
     }
 }
 
@@ -2646,7 +2782,7 @@ function showCountryTooltip(e) {
     tooltip.innerHTML = `
         <div class="tooltip-country">${countryName}</div>
         <div class="tooltip-iso">ISO: ${iso3}</div>
-        <div class="tooltip-temp">Temperature: ${temp !== null && temp !== undefined ? temp.toFixed(2) + '°F' : 'N/A'}</div>
+        <div class="tooltip-temp">Temperature: ${temp !== null && temp !== undefined ? temp.toFixed(2) + '°C' : 'N/A'}</div>
     `;
 
     // Position tooltip relative to map container
@@ -2669,22 +2805,35 @@ function hideCountryTooltip() {
 
 // Show Choropleth Layer
 function showChoroplethLayer() {
+    console.log('[DEBUG] showChoroplethLayer called');
     if (!map || !map.loaded()) {
+        console.warn('[DEBUG] Map not available or not loaded');
         return;
     }
 
     const layer = map.getLayer('climate-choropleth');
     if (layer) {
+        console.log('[DEBUG] Layer exists, setting visibility to visible');
+        const currentVisibility = map.getLayoutProperty('climate-choropleth', 'visibility');
+        console.log('[DEBUG]   Current visibility:', currentVisibility);
         map.setLayoutProperty('climate-choropleth', 'visibility', 'visible');
+        const newVisibility = map.getLayoutProperty('climate-choropleth', 'visibility');
+        console.log('[DEBUG]   New visibility:', newVisibility);
     } else {
+        console.log('[DEBUG] Layer does not exist, creating it');
         // Layer doesn't exist yet, create it
         if (climateBoundaries) {
             createChoroplethMap();
             // Ensure it's visible
             if (map.getLayer('climate-choropleth')) {
+                console.log('[DEBUG] Layer created, setting visibility to visible');
                 map.setLayoutProperty('climate-choropleth', 'visibility', 'visible');
+            } else {
+                console.error('[DEBUG] Failed to create layer');
             }
             updateClimateVisualization();
+        } else {
+            console.warn('[DEBUG] climateBoundaries not available');
         }
     }
 
@@ -2694,12 +2843,22 @@ function showChoroplethLayer() {
 
 // Hide Choropleth Layer
 function hideChoroplethLayer() {
-    if (!map || !map.loaded()) return;
+    console.log('[DEBUG] hideChoroplethLayer called');
+    if (!map || !map.loaded()) {
+        console.warn('[DEBUG] Map not available or not loaded');
+        return;
+    }
 
     const layer = map.getLayer('climate-choropleth');
     if (layer) {
+        const currentVisibility = map.getLayoutProperty('climate-choropleth', 'visibility');
+        console.log('[DEBUG]   Current visibility:', currentVisibility);
         map.setLayoutProperty('climate-choropleth', 'visibility', 'none');
-        console.log('Choropleth layer hidden');
+        const newVisibility = map.getLayoutProperty('climate-choropleth', 'visibility');
+        console.log('[DEBUG]   New visibility:', newVisibility);
+        console.log('[DEBUG] Choropleth layer hidden');
+    } else {
+        console.warn('[DEBUG] Layer does not exist, cannot hide');
     }
 
     // Ensure map is visible
@@ -2741,57 +2900,6 @@ function ensureMapVisible() {
     }, 100);
 }
 
-// Start Animation
-function startAnimation() {
-    if (isAnimating) return;
-
-    isAnimating = true;
-    const playBtn = document.getElementById('play-animation');
-    const pauseBtn = document.getElementById('pause-animation');
-    const slider = document.getElementById('climate-time-slider');
-
-    if (playBtn) playBtn.style.display = 'none';
-    if (pauseBtn) pauseBtn.style.display = 'flex';
-
-    let currentYear = parseInt(slider?.value || 1986);
-    const minYear = 1986;
-    const maxYear = 2099;
-
-    animationInterval = setInterval(() => {
-        currentYear += 1;
-        const slider = document.getElementById('climate-time-slider');
-        const maxYear = parseInt(slider?.max || 2099);
-        const minYear = parseInt(slider?.min || 1986);
-
-        if (currentYear > maxYear) {
-            currentYear = minYear;
-        }
-
-        if (slider) {
-            slider.value = currentYear;
-            const sliderYear = document.getElementById('slider-current-year');
-            if (sliderYear) sliderYear.textContent = currentYear;
-            slider.dispatchEvent(new Event('input'));
-        }
-    }, 100); // Update every 100ms
-}
-
-// Stop Animation
-function stopAnimation() {
-    if (!isAnimating) return;
-
-    isAnimating = false;
-    const playBtn = document.getElementById('play-animation');
-    const pauseBtn = document.getElementById('pause-animation');
-
-    if (playBtn) playBtn.style.display = 'flex';
-    if (pauseBtn) pauseBtn.style.display = 'none';
-
-    if (animationInterval) {
-        clearInterval(animationInterval);
-        animationInterval = null;
-    }
-}
 
 // Initialize Sentinel Control Toggle
 function initializeSentinelControl() {
