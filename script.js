@@ -2861,3 +2861,18 @@ function updateSentinelPosition(climateExpanded) {
     });
 }
 
+// Ensure Map is Visible
+function ensureMapVisible() {
+    const mapContainer = document.getElementById('map-view');
+    const mapContainerParent = document.querySelector('.map-container');
+
+    if (mapContainerParent) {
+        mapContainerParent.style.display = 'block';
+        mapContainerParent.style.visibility = 'visible';
+    }
+
+    if (map) {
+        map.resize();
+    }
+}
+
