@@ -2395,24 +2395,51 @@ async function loadClimateData() {
         console.log('[DEBUG] Metrics in filtered data:', Array.from(metrics));
 
         // Load GeoJSON boundaries
-        const geoJsonUrl = 'data/world-administrative-boundaries.geojson';
-        console.log('[DEBUG] Fetching GeoJSON from:', geoJsonUrl);
-        const geoJsonResponse = await fetch(geoJsonUrl);
+        // Try multiple potential paths for GitHub Pages compatibility
+        const geoJsonUrls = [
+            'data/world-administrative-boundaries.geojson',
+            './data/world-administrative-boundaries.geojson',
+            '/unesco_sites_cc_dashboard/data/world-administrative-boundaries.geojson'
+        ];
         
-        // Check if we got a 404 (file not found on server)
-        if (geoJsonResponse.status === 404) {
-            console.error('[DEBUG] GeoJSON file not found (404). This usually means:');
-            console.error('[DEBUG]   1. File not pushed to GitHub repository');
-            console.error('[DEBUG]   2. File too large for GitHub Pages (>100MB)');
-            console.error('[DEBUG]   3. GitHub Pages not serving the file correctly');
-            console.error('[DEBUG] Please check: https://github.com/NB11/unesco_sites_cc_dashboard/tree/main/data');
-            throw new Error('GeoJSON file not found on server (404). Please ensure data/world-administrative-boundaries.geojson is committed and pushed to GitHub.');
+        let geoJsonResponse = null;
+        let geoJsonUrl = null;
+        let lastError = null;
+        
+        // Try each URL until one works
+        for (const url of geoJsonUrls) {
+            try {
+                console.log('[DEBUG] Trying GeoJSON URL:', url);
+                geoJsonResponse = await fetch(url);
+                
+                if (geoJsonResponse.ok) {
+                    geoJsonUrl = url;
+                    console.log('[DEBUG] Successfully fetched GeoJSON from:', url);
+                    break;
+                } else if (geoJsonResponse.status === 404) {
+                    console.warn('[DEBUG] 404 for URL:', url);
+                    lastError = `404 Not Found: ${url}`;
+                    continue;
+                } else {
+                    console.warn('[DEBUG] Non-200 status for URL:', url, geoJsonResponse.status);
+                    lastError = `Status ${geoJsonResponse.status}: ${url}`;
+                    continue;
+                }
+            } catch (fetchError) {
+                console.warn('[DEBUG] Fetch error for URL:', url, fetchError);
+                lastError = fetchError.message;
+                continue;
+            }
         }
         
-        if (!geoJsonResponse.ok) {
-            console.error('[DEBUG] GeoJSON fetch failed:', geoJsonResponse.status, geoJsonResponse.statusText);
-            console.error('[DEBUG] Response URL:', geoJsonResponse.url);
-            throw new Error(`Failed to load boundaries GeoJSON: ${geoJsonResponse.status} ${geoJsonResponse.statusText}`);
+        if (!geoJsonResponse || !geoJsonResponse.ok) {
+            console.error('[DEBUG] All GeoJSON URLs failed. Last error:', lastError);
+            console.error('[DEBUG] This usually means:');
+            console.error('[DEBUG]   1. File not pushed to GitHub repository');
+            console.error('[DEBUG]   2. GitHub Pages needs to be rebuilt');
+            console.error('[DEBUG]   3. File path is incorrect');
+            console.error('[DEBUG] Please check: https://github.com/NB11/unesco_sites_cc_dashboard/tree/main/data');
+            throw new Error(`Failed to load GeoJSON from all attempted URLs. Last error: ${lastError}`);
         }
         
         // Check if response is actually JSON (not HTML error page)
@@ -2434,7 +2461,7 @@ async function loadClimateData() {
             }
             throw new Error(`Failed to parse GeoJSON: ${jsonError.message}`);
         }
-        console.log('[DEBUG] GeoJSON loaded successfully, features:', geoJsonData.features?.length || 0);
+        console.log('[DEBUG] GeoJSON loaded successfully from', geoJsonUrl, '- features:', geoJsonData.features?.length || 0);
 
         console.log('[DEBUG] GeoJSON boundaries loaded:', geoJsonData.features.length, 'features');
         console.log('[DEBUG] Sample GeoJSON feature:', geoJsonData.features[0]);
