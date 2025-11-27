@@ -228,6 +228,42 @@ function switchMapLayer(layerType) {
         activeBtn.classList.add('active');
     }
 
+    // Ensure choropleth layer remains visible if climate control is expanded
+    const climateControl = document.getElementById('climate-control');
+    if (climateControl && climateControl.classList.contains('expanded')) {
+        // Check if choropleth layer exists and should be visible
+        if (map.getLayer('climate-choropleth')) {
+            const currentVisibility = map.getLayoutProperty('climate-choropleth', 'visibility');
+            // If it was visible before, ensure it stays visible
+            if (currentVisibility === 'visible') {
+                // Ensure proper layer ordering: choropleth should be above satellite tiles but below points
+                const choroplethLayer = map.getLayer('climate-choropleth');
+                const pointsLayer = map.getLayer('whc001-layer');
+                if (choroplethLayer && pointsLayer) {
+                    // Move choropleth to be just before points layer (above satellite tiles)
+                    try {
+                        map.moveLayer('climate-choropleth', 'whc001-layer');
+                        console.log('[DEBUG] Moved choropleth layer to correct position for', layerType, 'view');
+                    } catch (e) {
+                        console.warn('[DEBUG] Could not move choropleth layer:', e);
+                    }
+                }
+                // Ensure visibility is maintained
+                map.setLayoutProperty('climate-choropleth', 'visibility', 'visible');
+                console.log('[DEBUG] Maintained choropleth visibility in', layerType, 'view');
+            }
+        } else {
+            // If choropleth doesn't exist yet but should be visible, create it
+            if (climateBoundaries) {
+                console.log('[DEBUG] Creating choropleth layer for', layerType, 'view');
+                createChoroplethMap();
+                if (map.getLayer('climate-choropleth')) {
+                    map.setLayoutProperty('climate-choropleth', 'visibility', 'visible');
+                }
+            }
+        }
+    }
+
     console.log('Switched to', layerType, 'layer');
 }
 
@@ -1836,7 +1872,8 @@ function addWhc001PointsToMap(sitesData) {
                     center: coordinates,
                     zoom: 12,
                     duration: 1500,
-                    essential: true
+                    essential: true,
+                    offset: [-140, 0] // Offset to account for 360px sidebar (shift left, adjusted ~1cm to the right)
                 });
 
                 // Switch to Information tab FIRST
@@ -2030,7 +2067,8 @@ function displaySearchResults(filtered) {
                 map.flyTo({
                     center: site.coordinates,
                     zoom: 12,
-                    duration: 1500
+                    duration: 1500,
+                    offset: [-140, 0] // Offset to account for 360px sidebar (shift left, adjusted ~1cm to the right)
                 });
             }
 
@@ -2217,30 +2255,26 @@ function initializeClimateControl() {
         console.log('[DEBUG] Climate toggle clicked, isExpanded:', isExpanded);
 
         if (isExpanded) {
-            // Collapse
+            // Collapse controls panel
             console.log('[DEBUG] Collapsing climate control');
             climateControl.classList.remove('expanded');
-            toggleBtn.classList.remove('active');
             controlsContent.style.display = 'none';
 
-            // Hide choropleth layer when collapsed
-            hideChoroplethLayer();
-
-            // Update position immediately (function uses requestAnimationFrame internally)
+            // Update sentinel position (moves up when collapsed)
             updateSentinelPosition(false);
         } else {
-            // Expand
+            // Expand controls panel
             console.log('[DEBUG] Expanding climate control');
             climateControl.classList.add('expanded');
-            toggleBtn.classList.add('active');
             controlsContent.style.display = 'flex';
 
-            // Show choropleth layer when expanded
-            showChoroplethLayer();
-
-            // Update position immediately (function uses requestAnimationFrame internally)
+            // Update sentinel position (moves down when expanded)
             updateSentinelPosition(true);
         }
+        
+        // Color map visibility is controlled by active state, not expanded state
+        // Active state is toggled separately or can be changed here if needed
+        // For now, we keep active state independent - color map stays visible when active
     });
 
     // Setup percentile buttons
@@ -2278,6 +2312,22 @@ function initializeClimateControl() {
     // Automatically load climate data on initialization - REMOVED duplicate call
     // log('Calling loadClimateData from initMap');
     // loadClimateData();
+
+    // If temperature button is active (toggled on), show choropleth layer
+    // The choropleth visibility is set when the layer is created, but we ensure it's shown here too
+    if (toggleBtn.classList.contains('active')) {
+        console.log('[DEBUG] Temperature button is active by default, choropleth will be visible');
+        // Use setTimeout to ensure map is ready and climate data is loaded
+        setTimeout(() => {
+            if (map && map.loaded() && climateBoundaries) {
+                showChoroplethLayer();
+            }
+        }, 1000);
+    }
+
+    // Initialize sentinel position based on initial climate control state
+    const isExpanded = climateControl.classList.contains('expanded');
+    updateSentinelPosition(isExpanded);
 
     // Ensure map is visible after initialization
     setTimeout(() => {
@@ -2513,12 +2563,18 @@ function createChoroplethMap() {
             }
         }
 
+        // Check if temperature button is active (toggled on) - color map should be visible when active
+        const climateToggleBtn = document.getElementById('climate-toggle-btn');
+        const isActive = climateToggleBtn && climateToggleBtn.classList.contains('active');
+        const initialVisibility = isActive ? 'visible' : 'none';
+        console.log('[DEBUG] Creating choropleth layer with visibility:', initialVisibility, '(active:', isActive, ')');
+        
         map.addLayer({
             id: 'climate-choropleth',
             type: 'fill',
             source: 'climate-boundaries',
             layout: {
-                visibility: 'none' // Hidden by default, shown when climate control is expanded
+                visibility: initialVisibility // Visible when button is active (toggled on)
             },
             minzoom: 0,
             maxzoom: 24,
