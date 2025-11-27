@@ -1,5 +1,12 @@
-data/world-administrative-boundaries.geojson
+# Keep data files - they are needed for the map to work
+# data/world-administrative-boundaries.geojson
+# data/climate_impact_data.csv
+# data/unesco_sites.parquet
+# data/whc001.csv
+
+# Optional/processing files (can be ignored)
 data/ClimateImpactLab_tas_annual_ssp2_45_long.csv
+data/ClimateImpactLab_GlobalData_20March2023 (1).xlsx
 inspect_data.py
 inspect_data.js
 scripts/transform_data.js
