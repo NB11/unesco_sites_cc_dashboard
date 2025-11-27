@@ -2317,12 +2317,26 @@ function initializeClimateControl() {
     // The choropleth visibility is set when the layer is created, but we ensure it's shown here too
     if (toggleBtn.classList.contains('active')) {
         console.log('[DEBUG] Temperature button is active by default, choropleth will be visible');
-        // Use setTimeout to ensure map is ready and climate data is loaded
-        setTimeout(() => {
-            if (map && map.loaded() && climateBoundaries) {
-                showChoroplethLayer();
+        // Try multiple times to ensure choropleth is shown after data loads
+        const tryShowChoropleth = (attempt = 0) => {
+            if (attempt > 10) {
+                console.warn('[DEBUG] Max attempts reached, giving up on showing choropleth');
+                return;
             }
-        }, 1000);
+            if (map && map.loaded() && climateBoundaries) {
+                console.log('[DEBUG] Conditions met, showing choropleth layer (attempt', attempt + 1, ')');
+                showChoroplethLayer();
+            } else {
+                console.log('[DEBUG] Waiting for conditions (attempt', attempt + 1, '):', {
+                    map: !!map,
+                    loaded: map ? map.loaded() : false,
+                    boundaries: !!climateBoundaries
+                });
+                setTimeout(() => tryShowChoropleth(attempt + 1), 500);
+            }
+        };
+        // Start trying after a short delay
+        setTimeout(() => tryShowChoropleth(), 500);
     }
 
     // Initialize sentinel position based on initial climate control state
@@ -2339,13 +2353,19 @@ function initializeClimateControl() {
 async function loadClimateData() {
     console.log('[DEBUG] ===== loadClimateData() called =====');
     console.log('[DEBUG] Timestamp:', new Date().toISOString());
+    console.log('[DEBUG] Current URL:', window.location.href);
     try {
         // Load CSV data
-        const csvResponse = await fetch('data/climate_impact_data.csv');
+        const csvUrl = 'data/climate_impact_data.csv';
+        console.log('[DEBUG] Fetching CSV from:', csvUrl);
+        const csvResponse = await fetch(csvUrl);
         if (!csvResponse.ok) {
-            throw new Error(`Failed to load climate CSV: ${csvResponse.status} ${csvResponse.statusText}`);
+            console.error('[DEBUG] CSV fetch failed:', csvResponse.status, csvResponse.statusText);
+            console.error('[DEBUG] Response URL:', csvResponse.url);
+            throw new Error(`Failed to load climate CSV: ${csvResponse.status} ${csvResponse.statusText}. URL: ${csvResponse.url}`);
         }
         const csvText = await csvResponse.text();
+        console.log('[DEBUG] CSV loaded successfully, length:', csvText.length);
 
         // Parse CSV
         const lines = csvText.trim().split('\n');
@@ -2375,11 +2395,16 @@ async function loadClimateData() {
         console.log('[DEBUG] Metrics in filtered data:', Array.from(metrics));
 
         // Load GeoJSON boundaries
-        const geoJsonResponse = await fetch('data/world-administrative-boundaries.geojson');
+        const geoJsonUrl = 'data/world-administrative-boundaries.geojson';
+        console.log('[DEBUG] Fetching GeoJSON from:', geoJsonUrl);
+        const geoJsonResponse = await fetch(geoJsonUrl);
         if (!geoJsonResponse.ok) {
-            throw new Error(`Failed to load boundaries GeoJSON: ${geoJsonResponse.status} ${geoJsonResponse.statusText}`);
+            console.error('[DEBUG] GeoJSON fetch failed:', geoJsonResponse.status, geoJsonResponse.statusText);
+            console.error('[DEBUG] Response URL:', geoJsonResponse.url);
+            throw new Error(`Failed to load boundaries GeoJSON: ${geoJsonResponse.status} ${geoJsonResponse.statusText}. URL: ${geoJsonResponse.url}`);
         }
         const geoJsonData = await geoJsonResponse.json();
+        console.log('[DEBUG] GeoJSON loaded successfully, features:', geoJsonData.features?.length || 0);
 
         console.log('[DEBUG] GeoJSON boundaries loaded:', geoJsonData.features.length, 'features');
         console.log('[DEBUG] Sample GeoJSON feature:', geoJsonData.features[0]);
@@ -2416,7 +2441,10 @@ async function loadClimateData() {
                 // Ensure layer is visible if button is active
                 const climateToggleBtn = document.getElementById('climate-toggle-btn');
                 if (climateToggleBtn && climateToggleBtn.classList.contains('active')) {
-                    showChoroplethLayer();
+                    // Small delay to ensure layer is fully created
+                    setTimeout(() => {
+                        showChoroplethLayer();
+                    }, 100);
                 }
             }, 500);
         } else if (map) {
@@ -2431,7 +2459,10 @@ async function loadClimateData() {
                     // Ensure layer is visible if button is active
                     const climateToggleBtn = document.getElementById('climate-toggle-btn');
                     if (climateToggleBtn && climateToggleBtn.classList.contains('active')) {
-                        showChoroplethLayer();
+                        // Small delay to ensure layer is fully created
+                        setTimeout(() => {
+                            showChoroplethLayer();
+                        }, 100);
                     }
                 }, 500);
             });
