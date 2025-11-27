@@ -2398,12 +2398,42 @@ async function loadClimateData() {
         const geoJsonUrl = 'data/world-administrative-boundaries.geojson';
         console.log('[DEBUG] Fetching GeoJSON from:', geoJsonUrl);
         const geoJsonResponse = await fetch(geoJsonUrl);
+        
+        // Check if we got a 404 (file not found on server)
+        if (geoJsonResponse.status === 404) {
+            console.error('[DEBUG] GeoJSON file not found (404). This usually means:');
+            console.error('[DEBUG]   1. File not pushed to GitHub repository');
+            console.error('[DEBUG]   2. File too large for GitHub Pages (>100MB)');
+            console.error('[DEBUG]   3. GitHub Pages not serving the file correctly');
+            console.error('[DEBUG] Please check: https://github.com/NB11/unesco_sites_cc_dashboard/tree/main/data');
+            throw new Error('GeoJSON file not found on server (404). Please ensure data/world-administrative-boundaries.geojson is committed and pushed to GitHub.');
+        }
+        
         if (!geoJsonResponse.ok) {
             console.error('[DEBUG] GeoJSON fetch failed:', geoJsonResponse.status, geoJsonResponse.statusText);
             console.error('[DEBUG] Response URL:', geoJsonResponse.url);
-            throw new Error(`Failed to load boundaries GeoJSON: ${geoJsonResponse.status} ${geoJsonResponse.statusText}. URL: ${geoJsonResponse.url}`);
+            throw new Error(`Failed to load boundaries GeoJSON: ${geoJsonResponse.status} ${geoJsonResponse.statusText}`);
         }
-        const geoJsonData = await geoJsonResponse.json();
+        
+        // Check if response is actually JSON (not HTML error page)
+        const contentType = geoJsonResponse.headers.get('content-type');
+        console.log('[DEBUG] Response content-type:', contentType);
+        
+        let geoJsonData;
+        try {
+            geoJsonData = await geoJsonResponse.json();
+        } catch (jsonError) {
+            // If JSON parsing fails, the response might be an HTML error page
+            const responseText = await geoJsonResponse.clone().text();
+            if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+                console.error('[DEBUG] Server returned HTML instead of JSON. This usually means:');
+                console.error('[DEBUG]   - File not found (404 page)');
+                console.error('[DEBUG]   - Server error page');
+                console.error('[DEBUG] Response preview:', responseText.substring(0, 500));
+                throw new Error('Server returned HTML error page instead of GeoJSON. File may not be available on GitHub Pages.');
+            }
+            throw new Error(`Failed to parse GeoJSON: ${jsonError.message}`);
+        }
         console.log('[DEBUG] GeoJSON loaded successfully, features:', geoJsonData.features?.length || 0);
 
         console.log('[DEBUG] GeoJSON boundaries loaded:', geoJsonData.features.length, 'features');
