@@ -302,6 +302,44 @@
         <div class="map-container">
             <div id="map-view"></div>
 
+            <!-- Info Button -->
+            <button class="info-button" id="info-button" title="About this map">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </button>
+
+            <!-- Info Modal -->
+            <div class="info-modal" id="info-modal" style="display: none;">
+                <div class="info-modal-content">
+                    <div class="info-modal-header">
+                        <h2>About This Map</h2>
+                        <button class="info-modal-close" id="info-modal-close">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="info-modal-body">
+                        <h3>Data Sources</h3>
+                        <ul>
+                            <li><strong>Climate Data:</strong> Climate Impact Lab - Annual Average Temperature (tas_annual) projections</li>
+                            <li><strong>Administrative Boundaries:</strong> World Administrative Boundaries GeoJSON</li>
+                            <li><strong>UNESCO Heritage Sites:</strong> UNESCO World Heritage Centre</li>
+                            <li><strong>Map Tiles:</strong> MapLibre GL JS</li>
+                        </ul>
+                        
+                        <h3>Climate & Damage Projections</h3>
+                        <p>Climate projections use CMIP6 (<a href="https://gmd.copernicus.org/articles/9/3461/2016/" target="_blank" rel="noopener noreferrer">O'Neill et al., 2016</a>) with SSP2-4.5, showing annual average temperature changes across time periods and percentiles (5th, 50th, 95th). Damage projections use CMIP5 (<a href="https://journals.ametsoc.org/bams/article/93/4/485/60085/An-Overview-of-CMIP5-and-the-Experiment-Design" target="_blank" rel="noopener noreferrer">Taylor et al., 2012</a>), with plans to update to CMIP6.</p>
+                        
+                        <h3>Credits</h3>
+                        <p>This interactive map was developed by NB to visualize climate change impacts on UNESCO World Heritage Sites. Data provided by the Climate Impact Lab. Source code available on <a href="https://github.com/NB11/unesco_sites_cc_dashboard" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Layer Control -->
             <div class="layer-control">
                 <button class="layer-btn active" data-layer="osm" id="layer-osm">
@@ -325,7 +363,8 @@
                 <button class="climate-toggle-btn" id="climate-toggle-btn">
                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                            d="M12 2v16m0 0a2 2 0 100-4 2 2 0 000 4zm0-16a2 2 0 100-4 2 2 0 000 4z" />
+                        <circle cx="12" cy="20" r="2" stroke="currentColor" stroke-width="2" />
                     </svg>
                     <span>Temperature</span>
                     <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

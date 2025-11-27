@@ -674,26 +674,27 @@ function toggleDataTabCalendar() {
             currentDataCalendarDate = new Date();
         }
 
-        // Position calendar relative to the button
+        // Position calendar next to the button (to the right) - use fixed positioning to overlap map
         const button = document.getElementById('data-range-calendar-btn');
         if (button) {
             const buttonRect = button.getBoundingClientRect();
-            const parentRect = calendar.parentElement.getBoundingClientRect();
 
-            // Calculate position relative to parent
-            const leftOffset = buttonRect.left - parentRect.left + (buttonRect.width / 2);
+            // Use fixed positioning relative to viewport so it can overlap the map
+            const leftOffset = buttonRect.right + 8; // 8px spacing from button
+            const topOffset = buttonRect.top; // Align top with button
 
-            // Set position
+            // Set position relative to viewport
             calendar.style.left = `${leftOffset}px`;
-            calendar.style.transform = 'translateX(-50%)';
+            calendar.style.top = `${topOffset}px`;
+            calendar.style.transform = 'none';
         }
 
-        // Set display and ensure it's visible
+        // Set display and ensure it's visible - use fixed positioning to overlap map
         calendar.style.display = 'block';
         calendar.style.visibility = 'visible';
         calendar.style.opacity = '1';
-        calendar.style.position = 'absolute';
-        calendar.style.zIndex = '2000';
+        calendar.style.position = 'fixed'; // Fixed to viewport, not sidebar
+        calendar.style.zIndex = '2000'; // High z-index to appear above map
 
         // Force a reflow to ensure display is applied
         calendar.offsetHeight;
@@ -838,13 +839,15 @@ function renderDataTabCalendar() {
 
     // Day click handlers for range selection
     daysEl.querySelectorAll('.compact-calendar-day:not(.other-month)').forEach(dayEl => {
-        dayEl.addEventListener('click', () => {
+        dayEl.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent event bubbling
             const day = parseInt(dayEl.dataset.day);
             const selectedMonth = parseInt(dayEl.dataset.month);
             const selectedYear = parseInt(dayEl.dataset.year);
             const clickedDate = new Date(selectedYear, selectedMonth, day);
-
-            let shouldCloseCalendar = false;
+            
+            // Normalize time to midnight for accurate comparison
+            clickedDate.setHours(0, 0, 0, 0);
 
             // Update independent dates (for plots)
             // If no dates selected, set as start
@@ -854,16 +857,22 @@ function renderDataTabCalendar() {
             }
             // If only start date selected
             else if (independentStartDate && !independentEndDate) {
-                if (clickedDate < independentStartDate) {
+                // Normalize start date for comparison
+                const startDate = new Date(independentStartDate);
+                startDate.setHours(0, 0, 0, 0);
+                
+                if (clickedDate.getTime() === startDate.getTime()) {
+                    // Clicked same date as start, do nothing (allow user to change their mind)
+                    console.log('Same date clicked, keeping start date');
+                } else if (clickedDate < startDate) {
                     // Clicked date is before start, swap them
-                    independentEndDate = independentStartDate;
+                    independentEndDate = new Date(independentStartDate);
                     independentStartDate = clickedDate;
+                    console.log('End date set (swapped):', clickedDate);
                 } else {
                     independentEndDate = clickedDate;
+                    console.log('End date set:', clickedDate);
                 }
-                console.log('End date set:', clickedDate);
-                // Close calendar after selecting both dates
-                shouldCloseCalendar = true;
             }
             // If both dates selected, start new selection
             else {
@@ -875,15 +884,15 @@ function renderDataTabCalendar() {
             updateDateRangeSummary();
             renderDataTabCalendar(); // Re-render to show updated selection
 
-            // Only close calendar after both dates are selected
-            if (shouldCloseCalendar && independentStartDate && independentEndDate) {
+            // Close calendar after selecting both dates (with a small delay to show the selection)
+            if (independentStartDate && independentEndDate) {
                 setTimeout(() => {
                     const calendarEl = document.getElementById('data-tab-calendar');
                     if (calendarEl) {
                         calendarEl.style.display = 'none';
                         console.log('Calendar closed after range selection');
                     }
-                }, 300); // Small delay to see the selection
+                }, 500); // Slightly longer delay to see the selection
             }
         });
     });
@@ -894,9 +903,14 @@ document.addEventListener('click', (e) => {
     const calendar = document.getElementById('data-tab-calendar');
     const calendarBtn = document.getElementById('data-range-calendar-btn');
 
-    if (calendar && !calendar.contains(e.target) &&
-        e.target !== calendarBtn && !calendarBtn?.contains(e.target)) {
-        calendar.style.display = 'none';
+    if (calendar && calendar.style.display === 'block') {
+        // Don't close if clicking inside calendar or on the button
+        if (!calendar.contains(e.target) && 
+            e.target !== calendarBtn && 
+            !calendarBtn?.contains(e.target)) {
+            calendar.style.display = 'none';
+            console.log('Calendar closed - clicked outside');
+        }
     }
 });
 
@@ -2179,6 +2193,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize Sentinel Control
     initializeSentinelControl();
+
+    // Initialize Info Button
+    initializeInfoButton();
 });
 
 // Climate Control State
@@ -2982,5 +2999,41 @@ function ensureMapVisible() {
     if (map) {
         map.resize();
     }
+}
+
+// Initialize Info Button
+function initializeInfoButton() {
+    const infoButton = document.getElementById('info-button');
+    const infoModal = document.getElementById('info-modal');
+    const closeButton = document.getElementById('info-modal-close');
+
+    if (!infoButton || !infoModal) return;
+
+    // Open modal on button click
+    infoButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        infoModal.style.display = 'flex';
+    });
+
+    // Close modal on close button click
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+    }
+
+    // Close modal when clicking outside
+    infoModal.addEventListener('click', (e) => {
+        if (e.target === infoModal) {
+            infoModal.style.display = 'none';
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && infoModal.style.display === 'flex') {
+            infoModal.style.display = 'none';
+        }
+    });
 }
 
