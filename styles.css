@@ -1132,6 +1132,28 @@ body {
     border: 1px solid var(--border);
 }
 
+.hover-info-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--muted);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+    margin-top: 0.5rem;
+}
+
+.hover-info-display #hover-country-name {
+    font-weight: 600;
+}
+
+.hover-info-display #hover-temperature {
+    color: var(--primary);
+    font-weight: 600;
+}
+
 .scale-labels {
     display: flex;
     justify-content: space-between;

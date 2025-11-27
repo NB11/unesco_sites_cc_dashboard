@@ -2407,6 +2407,11 @@ async function loadClimateData() {
                 console.log('[DEBUG] Executing delayed choropleth creation (map ready path)');
                 createChoroplethMap();
                 updateClimateVisualization();
+                // Ensure layer is visible if button is active
+                const climateToggleBtn = document.getElementById('climate-toggle-btn');
+                if (climateToggleBtn && climateToggleBtn.classList.contains('active')) {
+                    showChoroplethLayer();
+                }
             }, 500);
         } else if (map) {
             console.log('[DEBUG] Map not ready, waiting for load event');
@@ -2417,6 +2422,11 @@ async function loadClimateData() {
                     console.log('[DEBUG] Executing delayed choropleth creation (load event path)');
                     createChoroplethMap();
                     updateClimateVisualization();
+                    // Ensure layer is visible if button is active
+                    const climateToggleBtn = document.getElementById('climate-toggle-btn');
+                    if (climateToggleBtn && climateToggleBtn.classList.contains('active')) {
+                        showChoroplethLayer();
+                    }
                 }, 500);
             });
         } else {
@@ -2566,6 +2576,7 @@ function createChoroplethMap() {
         // Check if temperature button is active (toggled on) - color map should be visible when active
         const climateToggleBtn = document.getElementById('climate-toggle-btn');
         const isActive = climateToggleBtn && climateToggleBtn.classList.contains('active');
+        // Always set to visible initially if button is active, will be controlled by showChoroplethLayer/hideChoroplethLayer
         const initialVisibility = isActive ? 'visible' : 'none';
         console.log('[DEBUG] Creating choropleth layer with visibility:', initialVisibility, '(active:', isActive, ')');
         
@@ -2617,9 +2628,96 @@ function createChoroplethMap() {
         console.error('[DEBUG] Error stack:', error.stack);
     }
 
-    // Tooltips removed as per user request
-    // Hover effect removed
+    // Add hover event listeners for climate choropleth layer
+    setupClimateChoroplethHover();
 
+}
+
+// Setup hover events for climate choropleth layer
+function setupClimateChoroplethHover() {
+    if (!map || !map.loaded()) {
+        console.log('[DEBUG] Map not ready for hover setup, will retry');
+        return;
+    }
+
+    // Check if layer exists
+    if (!map.getLayer('climate-choropleth')) {
+        console.log('[DEBUG] Climate choropleth layer does not exist yet for hover setup');
+        return;
+    }
+
+    // Remove existing listeners if any
+    map.off('mouseenter', 'climate-choropleth', onClimateChoroplethEnter);
+    map.off('mouseleave', 'climate-choropleth', onClimateChoroplethLeave);
+    map.off('mousemove', 'climate-choropleth', onClimateChoroplethMove);
+
+    // Add hover event listeners
+    map.on('mouseenter', 'climate-choropleth', onClimateChoroplethEnter);
+    map.on('mouseleave', 'climate-choropleth', onClimateChoroplethLeave);
+    map.on('mousemove', 'climate-choropleth', onClimateChoroplethMove);
+    
+    console.log('[DEBUG] Hover events set up for climate-choropleth layer');
+}
+
+// Handle mouse enter on climate choropleth
+function onClimateChoroplethEnter(e) {
+    console.log('[DEBUG] Mouse entered climate choropleth');
+    map.getCanvas().style.cursor = 'pointer';
+    updateHoverDisplay(e);
+}
+
+// Handle mouse move on climate choropleth
+function onClimateChoroplethMove(e) {
+    updateHoverDisplay(e);
+}
+
+// Handle mouse leave on climate choropleth
+function onClimateChoroplethLeave() {
+    map.getCanvas().style.cursor = '';
+    hideHoverDisplay();
+}
+
+// Update hover display with country and temperature
+function updateHoverDisplay(e) {
+    const feature = e.features && e.features[0];
+    if (!feature) {
+        hideHoverDisplay();
+        return;
+    }
+
+    const properties = feature.properties;
+    const countryName = properties.name || 'Unknown';
+    const temp = properties.temperature;
+
+    if (temp === null || temp === undefined || temp === 0) {
+        hideHoverDisplay();
+        return;
+    }
+
+    // Format temperature: show + sign for positive values
+    const tempFormatted = temp >= 0 ? `+${temp.toFixed(1)}` : temp.toFixed(1);
+    
+    // Update display elements
+    const hoverInfoGroup = document.getElementById('hover-info-group');
+    const hoverCountryName = document.getElementById('hover-country-name');
+    const hoverTemperature = document.getElementById('hover-temperature');
+
+    if (hoverInfoGroup && hoverCountryName && hoverTemperature) {
+        hoverCountryName.textContent = countryName;
+        hoverTemperature.textContent = `${tempFormatted}°C`;
+        hoverInfoGroup.style.display = 'block';
+        console.log('[DEBUG] Hover display updated:', countryName, tempFormatted + '°C');
+    } else {
+        console.warn('[DEBUG] Hover display elements not found');
+    }
+}
+
+// Hide hover display
+function hideHoverDisplay() {
+    const hoverInfoGroup = document.getElementById('hover-info-group');
+    if (hoverInfoGroup) {
+        hoverInfoGroup.style.display = 'none';
+    }
 }
 
 // Convert Fahrenheit to Celsius
@@ -2892,6 +2990,9 @@ function showChoroplethLayer() {
         map.setLayoutProperty('climate-choropleth', 'visibility', 'visible');
         const newVisibility = map.getLayoutProperty('climate-choropleth', 'visibility');
         console.log('[DEBUG]   New visibility:', newVisibility);
+        
+        // Setup hover events when layer becomes visible
+        setupClimateChoroplethHover();
     } else {
         console.log('[DEBUG] Layer does not exist, creating it');
         // Layer doesn't exist yet, create it
@@ -2901,6 +3002,8 @@ function showChoroplethLayer() {
             if (map.getLayer('climate-choropleth')) {
                 console.log('[DEBUG] Layer created, setting visibility to visible');
                 map.setLayoutProperty('climate-choropleth', 'visibility', 'visible');
+                // Setup hover events after layer is created
+                setupClimateChoroplethHover();
             } else {
                 console.error('[DEBUG] Failed to create layer');
             }
