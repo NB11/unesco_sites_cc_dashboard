@@ -2342,6 +2342,9 @@ async function loadClimateData() {
     try {
         // Load CSV data
         const csvResponse = await fetch('data/climate_impact_data.csv');
+        if (!csvResponse.ok) {
+            throw new Error(`Failed to load climate CSV: ${csvResponse.status} ${csvResponse.statusText}`);
+        }
         const csvText = await csvResponse.text();
 
         // Parse CSV
@@ -2373,6 +2376,9 @@ async function loadClimateData() {
 
         // Load GeoJSON boundaries
         const geoJsonResponse = await fetch('data/world-administrative-boundaries.geojson');
+        if (!geoJsonResponse.ok) {
+            throw new Error(`Failed to load boundaries GeoJSON: ${geoJsonResponse.status} ${geoJsonResponse.statusText}`);
+        }
         const geoJsonData = await geoJsonResponse.json();
 
         console.log('[DEBUG] GeoJSON boundaries loaded:', geoJsonData.features.length, 'features');
@@ -2434,7 +2440,9 @@ async function loadClimateData() {
         }
     } catch (error) {
         console.error('Error loading climate data:', error);
-        alert('Error loading climate data. Please check the console for details.');
+        // Don't show alert - just log the error and continue
+        // The app can still function without climate data
+        console.warn('Climate data not available. Temperature visualization will be disabled.');
     }
 }
 
