@@ -1366,9 +1366,21 @@ async function loadUnescoSites() {
     }
 
     try {
-        // Fetch the parquet file
-        const response = await fetch('data/unesco_sites.parquet');
-        if (!response.ok) {
+        // Fetch the parquet file - use jsDelivr CDN to avoid GitHub Pages deployment issues
+        const parquetUrls = [
+            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/unesco_sites.parquet',
+            'data/unesco_sites.parquet'
+        ];
+        let response = null;
+        for (const url of parquetUrls) {
+            try {
+                response = await fetch(url);
+                if (response.ok) break;
+            } catch (e) {
+                continue;
+            }
+        }
+        if (!response || !response.ok) {
             console.warn('UNESCO sites parquet file not found');
             return;
         }
@@ -1550,10 +1562,22 @@ async function loadWhc001CSV() {
 
     try {
         console.log('Fetching WHC001 CSV file...');
-        // Fetch the CSV file
-        const response = await fetch('data/whc001.csv');
-        if (!response.ok) {
-            console.warn('WHC001 CSV file not found:', response.status, response.statusText);
+        // Fetch the CSV file - use jsDelivr CDN to avoid GitHub Pages deployment issues
+        const csvUrls = [
+            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/whc001.csv',
+            'data/whc001.csv'
+        ];
+        let response = null;
+        for (const url of csvUrls) {
+            try {
+                response = await fetch(url);
+                if (response.ok) break;
+            } catch (e) {
+                continue;
+            }
+        }
+        if (!response || !response.ok) {
+            console.warn('WHC001 CSV file not found:', response?.status, response?.statusText);
             return;
         }
 
@@ -2355,15 +2379,30 @@ async function loadClimateData() {
     console.log('[DEBUG] Timestamp:', new Date().toISOString());
     console.log('[DEBUG] Current URL:', window.location.href);
     try {
-        // Load CSV data
-        const csvUrl = 'data/climate_impact_data.csv';
-        console.log('[DEBUG] Fetching CSV from:', csvUrl);
-        const csvResponse = await fetch(csvUrl);
-        if (!csvResponse.ok) {
-            console.error('[DEBUG] CSV fetch failed:', csvResponse.status, csvResponse.statusText);
-            console.error('[DEBUG] Response URL:', csvResponse.url);
-            throw new Error(`Failed to load climate CSV: ${csvResponse.status} ${csvResponse.statusText}. URL: ${csvResponse.url}`);
+        // Load CSV data - use jsDelivr CDN to avoid GitHub Pages deployment issues
+        const csvUrls = [
+            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/climate_impact_data.csv',
+            'data/climate_impact_data.csv'
+        ];
+        let csvResponse = null;
+        let csvUrl = null;
+        for (const url of csvUrls) {
+            try {
+                console.log('[DEBUG] Trying CSV URL:', url);
+                csvResponse = await fetch(url);
+                if (csvResponse.ok) {
+                    csvUrl = url;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
         }
+        if (!csvResponse || !csvResponse.ok) {
+            console.error('[DEBUG] CSV fetch failed for all URLs');
+            throw new Error(`Failed to load climate CSV from all attempted URLs`);
+        }
+        console.log('[DEBUG] CSV loaded from:', csvUrl);
         const csvText = await csvResponse.text();
         console.log('[DEBUG] CSV loaded successfully, length:', csvText.length);
 

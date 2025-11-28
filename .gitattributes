@@ -1,10 +1,9 @@
-# Track large Parquet file with Git LFS (not needed for GitHub Pages)
-data/unesco_sites.parquet filter=lfs diff=lfs merge=lfs -text
-
-# Track large CSV files with Git LFS (not needed for GitHub Pages)
-data/climate_impact_data.csv filter=lfs diff=lfs merge=lfs -text
-data/whc001.csv filter=lfs diff=lfs merge=lfs -text
-
-# GeoJSON file stays in regular Git (needed for GitHub Pages, 8MB is acceptable)
-# data/world-administrative-boundaries.geojson - regular Git
+# All data files are in regular Git but served via jsDelivr CDN
+# This avoids GitHub Pages deployment timeouts while keeping files accessible
+# Files are served from: https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/
+# 
+# data/unesco_sites.parquet - regular Git (served via CDN)
+# data/climate_impact_data.csv - regular Git (served via CDN)
+# data/whc001.csv - regular Git (served via CDN)
+# data/world-administrative-boundaries.geojson - regular Git (served via CDN)
 
