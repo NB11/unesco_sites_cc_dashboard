@@ -2395,8 +2395,10 @@ async function loadClimateData() {
         console.log('[DEBUG] Metrics in filtered data:', Array.from(metrics));
 
         // Load GeoJSON boundaries
-        // Try multiple potential paths for GitHub Pages compatibility
+        // Try multiple potential paths including CDN for large files
+        // jsDelivr CDN can serve files directly from GitHub, bypassing Git LFS limitations
         const geoJsonUrls = [
+            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/world-administrative-boundaries.geojson',
             'data/world-administrative-boundaries.geojson',
             './data/world-administrative-boundaries.geojson',
             '/unesco_sites_cc_dashboard/data/world-administrative-boundaries.geojson'
