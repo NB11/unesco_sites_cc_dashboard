@@ -1,0 +1,10 @@
+# Track large GeoJSON file with Git LFS
+data/world-administrative-boundaries.geojson filter=lfs diff=lfs merge=lfs -text
+
+# Track large Parquet file with Git LFS  
+data/unesco_sites.parquet filter=lfs diff=lfs merge=lfs -text
+
+# Track large CSV files with Git LFS if needed
+data/climate_impact_data.csv filter=lfs diff=lfs merge=lfs -text
+data/whc001.csv filter=lfs diff=lfs merge=lfs -text
+
