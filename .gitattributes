@@ -1,10 +1,10 @@
-# Track large GeoJSON file with Git LFS
-data/world-administrative-boundaries.geojson filter=lfs diff=lfs merge=lfs -text
-
-# Track large Parquet file with Git LFS  
+# Track large Parquet file with Git LFS (not needed for GitHub Pages)
 data/unesco_sites.parquet filter=lfs diff=lfs merge=lfs -text
 
-# Track large CSV files with Git LFS if needed
+# Track large CSV files with Git LFS (not needed for GitHub Pages)
 data/climate_impact_data.csv filter=lfs diff=lfs merge=lfs -text
 data/whc001.csv filter=lfs diff=lfs merge=lfs -text
+
+# GeoJSON file stays in regular Git (needed for GitHub Pages, 8MB is acceptable)
+# data/world-administrative-boundaries.geojson - regular Git
 
