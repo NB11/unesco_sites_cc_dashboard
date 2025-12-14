@@ -46,6 +46,3 @@ Interactive web map visualizing climate change impacts on UNESCO World Heritage 
 - **parquet-wasm** - Parquet file parsing
 - **SheetJS** - Excel file parsing
 
-## Browser Requirements
-
-Modern browser with WebAssembly support (Chrome, Firefox, Safari, Edge).
