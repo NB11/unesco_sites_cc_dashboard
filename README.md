@@ -2,8 +2,8 @@
 
 Interactive web map visualizing climate change impacts on UNESCO World Heritage Sites with temperature projections and satellite imagery.
 
-[Live Demo](https://nb11.github.io/unesco_sites_cc_dashboard/)
 
+[![Website]([https://img.shields.io/badge/Website-Visit-blue?style=for-the-badge&logo=google-chrome](https://nb11.github.io/unesco_sites_cc_dashboard/))]([https://your-website-url.com](https://nb11.github.io/unesco_sites_cc_dashboard/))
 ## Features
 
 - **Interactive Map**: Explore UNESCO World Heritage Sites with clickable markers
