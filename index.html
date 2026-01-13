@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UNESCO Heritage Site Temperature Change Analytics</title>
 
+    <!-- Google Fonts - Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Maplibre GL JS CSS -->
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 
@@ -358,80 +363,101 @@
                 </button>
             </div>
 
-            <!-- Climate Control -->
-            <div class="climate-control" id="climate-control">
-                <button class="climate-toggle-btn active" id="climate-toggle-btn">
-                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                    </svg>
-                    <span>Temperature</span>
-                    <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div class="climate-controls-content" id="climate-controls-content" style="display: none;">
-                    <div class="control-group">
-                        <label class="control-label">Time Period</label>
-                        <div class="time-period-buttons">
-                            <button class="time-period-btn active" data-period="1986-2005">
-                                <span class="btn-years">1986-2005</span>
-                            </button>
-                            <button class="time-period-btn" data-period="2020-2039">
-                                <span class="btn-years">2020-2039</span>
-                            </button>
-                            <button class="time-period-btn" data-period="2040-2059">
-                                <span class="btn-years">2040-2059</span>
-                            </button>
-                            <button class="time-period-btn" data-period="2080-2099">
-                                <span class="btn-years">2080-2099</span>
-                            </button>
+            <!-- Map Controls Container -->
+            <div class="map-controls-container" id="map-controls-container">
+                <!-- Climate Control -->
+                <div class="map-control-item" id="climate-control">
+                    <button class="map-control-btn active" id="climate-toggle-btn">
+                        <span>Temperature</span>
+                        <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="map-control-content" id="climate-controls-content" style="display: none;">
+                        <div class="control-group">
+                            <label class="control-label">Time Period</label>
+                            <div class="time-period-buttons">
+                                <button class="time-period-btn active" data-period="1986-2005">
+                                    <span class="btn-years">1986-2005</span>
+                                </button>
+                                <button class="time-period-btn" data-period="2020-2039">
+                                    <span class="btn-years">2020-2039</span>
+                                </button>
+                                <button class="time-period-btn" data-period="2040-2059">
+                                    <span class="btn-years">2040-2059</span>
+                                </button>
+                                <button class="time-period-btn" data-period="2080-2099">
+                                    <span class="btn-years">2080-2099</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="control-group">
-                        <label class="control-label">Percentile</label>
-                        <div class="percentile-buttons">
-                            <button class="percentile-btn active" data-percentile="5">5th</button>
-                            <button class="percentile-btn" data-percentile="50">50th</button>
-                            <button class="percentile-btn" data-percentile="95">95th</button>
+                        <div class="control-group">
+                            <label class="control-label">Percentile</label>
+                            <div class="percentile-buttons">
+                                <button class="percentile-btn active" data-percentile="5">5th</button>
+                                <button class="percentile-btn" data-percentile="50">50th</button>
+                                <button class="percentile-btn" data-percentile="95">95th</button>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="control-group">
-                        <label class="control-label">Color Scale</label>
-                        <div class="color-scale-legend" id="color-scale-legend">
-                            <div class="scale-gradient"></div>
-                            <div class="scale-labels">
-                                <span id="scale-min">-</span>
-                                <span id="scale-max">-</span>
+                        <div class="control-group">
+                            <label class="control-label">Color Scale</label>
+                            <div class="color-scale-legend" id="color-scale-legend">
+                                <div class="scale-gradient"></div>
+                                <div class="scale-labels">
+                                    <span id="scale-min">-</span>
+                                    <span id="scale-max">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="hover-info-group" style="display: none;">
+                            <div class="hover-info-display" id="hover-info-display">
+                                <span id="hover-country-name"></span>
+                                <span id="hover-temperature"></span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="control-group" id="hover-info-group" style="display: none;">
-                        <div class="hover-info-display" id="hover-info-display">
-                            <span id="hover-country-name"></span>
-                            <span id="hover-temperature"></span>
+                <!-- Tourism Control -->
+                <div class="map-control-item" id="tourism-control">
+                    <button class="map-control-btn" id="tourism-toggle-btn">
+                        <span>Tourism</span>
+                        <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="map-control-content" id="tourism-controls-content" style="display: none;">
+                        <div class="control-group">
+                            <label class="control-label">Tourism GDP Share (2023)</label>
+                            <div class="color-scale-legend" id="tourism-color-scale-legend">
+                                <div class="scale-gradient" style="background: linear-gradient(to right, #000004, #420a68, #932667, #dd513a, #fca50a, #fcffa4);"></div>
+                                <div class="scale-labels">
+                                    <span id="tourism-scale-min">0%</span>
+                                    <span id="tourism-scale-max">30%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group" id="tourism-hover-info-group" style="display: none;">
+                            <div class="hover-info-display" id="tourism-hover-info-display">
+                                <span id="tourism-hover-country-name"></span>
+                                <span id="tourism-hover-value"></span>
+                            </div>
                         </div>
                     </div>
-
                 </div>
-            </div>
 
-            <!-- Sentinel Control -->
-            <div class="sentinel-control" id="sentinel-control">
-                <button class="sentinel-toggle-btn" id="sentinel-toggle-btn">
-                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <span>Sentinel</span>
-                    <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div class="sentinel-controls-content" id="sentinel-controls-content" style="display: none;">
+                <!-- Sentinel Control -->
+                <div class="map-control-item" id="sentinel-control">
+                    <button class="map-control-btn" id="sentinel-toggle-btn">
+                        <span>Sentinel</span>
+                        <svg class="icon expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="map-control-content" id="sentinel-controls-content" style="display: none;">
                     <div class="sentinel-buttons">
                         <button class="sentinel-btn" data-sentinel="1" id="sentinel-1">
                             <span>Sentinel 1</span>
@@ -479,6 +505,7 @@
                         <div class="product-selector-body-integrated" id="product-selector-body">
                             <!-- Products will be populated here -->
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>

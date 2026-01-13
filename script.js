@@ -9,6 +9,10 @@ let unescoSitesData = []; // Store complete site data objects
 let climateData = null;
 let climateBoundaries = null;
 
+// Tourism data globals
+let tourismData = null;
+let tourismBoundaries = null;
+
 // Initialize Map with Maplibre GL JS
 function initMap() {
     console.log('initMap called');
@@ -1366,21 +1370,9 @@ async function loadUnescoSites() {
     }
 
     try {
-        // Fetch the parquet file - use jsDelivr CDN to avoid GitHub Pages deployment issues
-        const parquetUrls = [
-            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/unesco_sites.parquet',
-            'data/unesco_sites.parquet'
-        ];
-        let response = null;
-        for (const url of parquetUrls) {
-            try {
-                response = await fetch(url);
-                if (response.ok) break;
-            } catch (e) {
-                continue;
-            }
-        }
-        if (!response || !response.ok) {
+        // Fetch the parquet file
+        const response = await fetch('data/unesco_sites.parquet');
+        if (!response.ok) {
             console.warn('UNESCO sites parquet file not found');
             return;
         }
@@ -1562,22 +1554,10 @@ async function loadWhc001CSV() {
 
     try {
         console.log('Fetching WHC001 CSV file...');
-        // Fetch the CSV file - use jsDelivr CDN to avoid GitHub Pages deployment issues
-        const csvUrls = [
-            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/whc001.csv',
-            'data/whc001.csv'
-        ];
-        let response = null;
-        for (const url of csvUrls) {
-            try {
-                response = await fetch(url);
-                if (response.ok) break;
-            } catch (e) {
-                continue;
-            }
-        }
-        if (!response || !response.ok) {
-            console.warn('WHC001 CSV file not found:', response?.status, response?.statusText);
+        // Fetch the CSV file
+        const response = await fetch('data/whc001.csv');
+        if (!response.ok) {
+            console.warn('WHC001 CSV file not found:', response.status, response.statusText);
             return;
         }
 
@@ -2253,6 +2233,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Climate Control
     initializeClimateControl();
 
+    // Initialize Tourism Control
+    initializeTourismControl();
+
     // Initialize Sentinel Control
     initializeSentinelControl();
 
@@ -2274,31 +2257,44 @@ function initializeClimateControl() {
 
     if (!toggleBtn || !controlsContent || !climateControl) return;
 
-    toggleBtn.addEventListener('click', () => {
-        const isExpanded = climateControl.classList.contains('expanded');
-        console.log('[DEBUG] Climate toggle clicked, isExpanded:', isExpanded);
+    toggleBtn.addEventListener('click', (e) => {
+        // Check if clicking on expand icon - if so, only toggle expanded state
+        if (e.target.closest('.expand-icon')) {
+            const isExpanded = climateControl.classList.contains('expanded');
+            console.log('[DEBUG] Climate expand icon clicked, isExpanded:', isExpanded);
 
-        if (isExpanded) {
-            // Collapse controls panel
-            console.log('[DEBUG] Collapsing climate control');
-            climateControl.classList.remove('expanded');
-            controlsContent.style.display = 'none';
-
-            // Update sentinel position (moves up when collapsed)
-            updateSentinelPosition(false);
-        } else {
-            // Expand controls panel
-            console.log('[DEBUG] Expanding climate control');
-            climateControl.classList.add('expanded');
-            controlsContent.style.display = 'flex';
-
-            // Update sentinel position (moves down when expanded)
-            updateSentinelPosition(true);
+            if (isExpanded) {
+                climateControl.classList.remove('expanded');
+                controlsContent.style.display = 'none';
+            } else {
+                climateControl.classList.add('expanded');
+                controlsContent.style.display = 'flex';
+            }
+            return;
         }
         
-        // Color map visibility is controlled by active state, not expanded state
-        // Active state is toggled separately or can be changed here if needed
-        // For now, we keep active state independent - color map stays visible when active
+        // Otherwise, toggle active state (show/hide choropleth)
+        const isActive = toggleBtn.classList.contains('active');
+        console.log('[DEBUG] Climate toggle clicked, isActive:', isActive);
+        
+        if (isActive) {
+            toggleBtn.classList.remove('active');
+            hideChoroplethLayer();
+        } else {
+            // Turn off tourism button if active
+            const tourismToggleBtn = document.getElementById('tourism-toggle-btn');
+            if (tourismToggleBtn && tourismToggleBtn.classList.contains('active')) {
+                tourismToggleBtn.classList.remove('active');
+                hideTourismLayers();
+            }
+            
+            toggleBtn.classList.add('active');
+            // Ensure climate data is loaded
+            if (!climateBoundaries) {
+                loadClimateData();
+            }
+            showChoroplethLayer();
+        }
     });
 
     // Setup percentile buttons
@@ -2379,30 +2375,15 @@ async function loadClimateData() {
     console.log('[DEBUG] Timestamp:', new Date().toISOString());
     console.log('[DEBUG] Current URL:', window.location.href);
     try {
-        // Load CSV data - use jsDelivr CDN to avoid GitHub Pages deployment issues
-        const csvUrls = [
-            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/climate_impact_data.csv',
-            'data/climate_impact_data.csv'
-        ];
-        let csvResponse = null;
-        let csvUrl = null;
-        for (const url of csvUrls) {
-            try {
-                console.log('[DEBUG] Trying CSV URL:', url);
-                csvResponse = await fetch(url);
-                if (csvResponse.ok) {
-                    csvUrl = url;
-                    break;
-                }
-            } catch (e) {
-                continue;
-            }
+        // Load CSV data
+        const csvUrl = 'data/climate_impact_data.csv';
+        console.log('[DEBUG] Fetching CSV from:', csvUrl);
+        const csvResponse = await fetch(csvUrl);
+        if (!csvResponse.ok) {
+            console.error('[DEBUG] CSV fetch failed:', csvResponse.status, csvResponse.statusText);
+            console.error('[DEBUG] Response URL:', csvResponse.url);
+            throw new Error(`Failed to load climate CSV: ${csvResponse.status} ${csvResponse.statusText}. URL: ${csvResponse.url}`);
         }
-        if (!csvResponse || !csvResponse.ok) {
-            console.error('[DEBUG] CSV fetch failed for all URLs');
-            throw new Error(`Failed to load climate CSV from all attempted URLs`);
-        }
-        console.log('[DEBUG] CSV loaded from:', csvUrl);
         const csvText = await csvResponse.text();
         console.log('[DEBUG] CSV loaded successfully, length:', csvText.length);
 
@@ -2434,10 +2415,8 @@ async function loadClimateData() {
         console.log('[DEBUG] Metrics in filtered data:', Array.from(metrics));
 
         // Load GeoJSON boundaries
-        // Try multiple potential paths including CDN for large files
-        // jsDelivr CDN can serve files directly from GitHub, bypassing Git LFS limitations
+        // Try multiple potential paths for GitHub Pages compatibility
         const geoJsonUrls = [
-            'https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/world-administrative-boundaries.geojson',
             'data/world-administrative-boundaries.geojson',
             './data/world-administrative-boundaries.geojson',
             '/unesco_sites_cc_dashboard/data/world-administrative-boundaries.geojson'
@@ -3329,6 +3308,463 @@ function initializeInfoButton() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && infoModal.style.display === 'flex') {
             infoModal.style.display = 'none';
+        }
+    });
+}
+
+// ==================== TOURISM DATA FUNCTIONS ====================
+
+// Load Tourism Data from JSON and GeoJSON
+async function loadTourismData() {
+    console.log('[DEBUG] ===== loadTourismData() called =====');
+    try {
+        // Load tourism JSON data
+        const tourismResponse = await fetch('data/tourism_gdp_2023.json');
+        if (!tourismResponse.ok) {
+            console.error('[DEBUG] Failed to load tourism JSON:', tourismResponse.status);
+            return;
+        }
+        const tourismJson = await tourismResponse.json();
+        console.log('[DEBUG] Tourism JSON loaded:', tourismJson.countries.length, 'countries');
+        
+        // Create lookup map from country name to GDP value
+        const tourismLookup = {};
+        tourismJson.countries.forEach(item => {
+            const normalizedName = item.country.toLowerCase().trim();
+            tourismLookup[normalizedName] = item.value;
+        });
+        console.log('[DEBUG] Tourism lookup created:', Object.keys(tourismLookup));
+        
+        // Store tourism data
+        tourismData = tourismJson;
+        
+        // Use climate boundaries if available, otherwise load GeoJSON
+        let geoJsonData = null;
+        if (climateBoundaries) {
+            console.log('[DEBUG] Reusing climate boundaries for tourism');
+            geoJsonData = JSON.parse(JSON.stringify(climateBoundaries)); // Deep copy
+        } else {
+            console.log('[DEBUG] Loading GeoJSON boundaries for tourism');
+            const geoJsonResponse = await fetch('data/world-administrative-boundaries.geojson');
+            if (!geoJsonResponse.ok) {
+                console.error('[DEBUG] Failed to load GeoJSON:', geoJsonResponse.status);
+                return;
+            }
+            geoJsonData = await geoJsonResponse.json();
+        }
+        
+        console.log('[DEBUG] GeoJSON loaded:', geoJsonData.features.length, 'features');
+        
+        // Country name variations for matching
+        const countryNameVariations = {
+            'u.k. of great britain and northern ireland': 'united kingdom',
+            'czech republic': 'czechia',
+            'the netherlands': 'netherlands'
+        };
+        
+        // Match tourism data with GeoJSON boundaries
+        let matchCount = 0;
+        geoJsonData.features.forEach(feature => {
+            const countryName = feature.properties.name;
+            if (countryName) {
+                let normalizedName = countryName.toLowerCase().trim();
+                
+                // Apply country name variations
+                if (countryNameVariations[normalizedName]) {
+                    normalizedName = countryNameVariations[normalizedName];
+                }
+                
+                // Try exact match
+                if (tourismLookup[normalizedName] !== undefined) {
+                    feature.properties.tourismGdpShare = tourismLookup[normalizedName];
+                    matchCount++;
+                    console.log('[DEBUG] Matched:', countryName, '->', tourismLookup[normalizedName], '%');
+                }
+            }
+        });
+        
+        console.log('[DEBUG] Matched', matchCount, 'countries with tourism data');
+        
+        // Store processed boundaries
+        tourismBoundaries = geoJsonData;
+        
+        // Create layers if tourism button is active
+        const tourismToggleBtn = document.getElementById('tourism-toggle-btn');
+        if (tourismToggleBtn && tourismToggleBtn.classList.contains('active')) {
+            if (map && map.loaded() && map.isStyleLoaded()) {
+                createTourismChoroplethMap();
+                createTourismLabelsLayer();
+            }
+        }
+        
+    } catch (error) {
+        console.error('[DEBUG] Error loading tourism data:', error);
+    }
+}
+
+// Create Tourism Choropleth Map Layer
+function createTourismChoroplethMap() {
+    console.log('[DEBUG] createTourismChoroplethMap called');
+    
+    if (!tourismBoundaries || !map) {
+        console.warn('[DEBUG] Missing tourismBoundaries or map');
+        return;
+    }
+    
+    if (!map.loaded() || !map.isStyleLoaded()) {
+        console.warn('[DEBUG] Map not ready for tourism choropleth');
+        return;
+    }
+    
+    try {
+        // Add or update source
+        if (!map.getSource('tourism-boundaries')) {
+            console.log('[DEBUG] Creating tourism-boundaries source');
+            map.addSource('tourism-boundaries', {
+                type: 'geojson',
+                data: tourismBoundaries
+            });
+        } else {
+            console.log('[DEBUG] Updating tourism-boundaries source');
+            map.getSource('tourism-boundaries').setData(tourismBoundaries);
+        }
+        
+        // Remove existing layer if it exists
+        if (map.getLayer('tourism-choropleth')) {
+            map.removeLayer('tourism-choropleth');
+        }
+        
+        // Find where to place the layer (before points layer)
+        let beforeId;
+        if (map.getLayer('whc001-layer')) {
+            beforeId = 'whc001-layer';
+        } else {
+            const layers = map.getStyle().layers;
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol') {
+                    beforeId = layers[i].id;
+                    break;
+                }
+            }
+        }
+        
+        // Calculate min/max for color scale
+        const values = tourismBoundaries.features
+            .map(f => f.properties.tourismGdpShare)
+            .filter(v => v !== null && v !== undefined && !isNaN(v));
+        const minValue = values.length > 0 ? Math.min(...values) : 0;
+        const maxValue = values.length > 0 ? Math.max(...values) : 30;
+        
+        console.log('[DEBUG] Tourism GDP range:', minValue, 'to', maxValue, '% (', values.length, 'countries)');
+        
+        // Update legend
+        const minSpan = document.getElementById('tourism-scale-min');
+        const maxSpan = document.getElementById('tourism-scale-max');
+        if (minSpan) minSpan.textContent = minValue.toFixed(1) + '%';
+        if (maxSpan) maxSpan.textContent = maxValue.toFixed(1) + '%';
+        
+        // Add choropleth layer with inferno color scale
+        map.addLayer({
+            id: 'tourism-choropleth',
+            type: 'fill',
+            source: 'tourism-boundaries',
+            layout: {
+                visibility: 'visible'
+            },
+            minzoom: 0,
+            maxzoom: 24,
+            paint: {
+                'fill-color': [
+                    'case',
+                    ['has', 'tourismGdpShare'],
+                    [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'tourismGdpShare'],
+                        minValue, '#000004',      // Black (inferno low)
+                        minValue + (maxValue - minValue) * 0.2, '#420a68',  // Dark purple
+                        minValue + (maxValue - minValue) * 0.4, '#932667',  // Purple
+                        minValue + (maxValue - minValue) * 0.6, '#dd513a',  // Orange-red
+                        minValue + (maxValue - minValue) * 0.8, '#fca50a',  // Orange
+                        maxValue, '#fcffa4'       // Light yellow (inferno high)
+                    ],
+                    'rgba(0, 0, 0, 0)' // Transparent for countries without data
+                ],
+                'fill-opacity': 0.7,
+                'fill-outline-color': '#ffffff'
+            }
+        }, beforeId);
+        
+        console.log('[DEBUG] Tourism choropleth layer created');
+        
+    } catch (error) {
+        console.error('[DEBUG] Error creating tourism choropleth:', error);
+    }
+}
+
+// Create Tourism Labels Layer (showing percentage inside countries)
+function createTourismLabelsLayer() {
+    console.log('[DEBUG] createTourismLabelsLayer called');
+    
+    if (!tourismBoundaries || !map) {
+        console.warn('[DEBUG] Missing tourismBoundaries or map');
+        return;
+    }
+    
+    if (!map.loaded() || !map.isStyleLoaded()) {
+        console.warn('[DEBUG] Map not ready for tourism labels');
+        return;
+    }
+    
+    try {
+        // Create point features for labels at country centroids
+        const labelFeatures = [];
+        
+        tourismBoundaries.features.forEach(feature => {
+            if (feature.properties.tourismGdpShare !== undefined && 
+                feature.properties.tourismGdpShare !== null) {
+                
+                // Get centroid from geo_point_2d if available, otherwise calculate
+                let centroid;
+                if (feature.properties.geo_point_2d) {
+                    centroid = [
+                        feature.properties.geo_point_2d.lon,
+                        feature.properties.geo_point_2d.lat
+                    ];
+                } else {
+                    centroid = calculateCentroid(feature.geometry);
+                }
+                
+                if (centroid) {
+                    labelFeatures.push({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: centroid
+                        },
+                        properties: {
+                            name: feature.properties.name,
+                            tourismGdpShare: feature.properties.tourismGdpShare,
+                            label: feature.properties.tourismGdpShare.toFixed(1) + '%'
+                        }
+                    });
+                }
+            }
+        });
+        
+        console.log('[DEBUG] Created', labelFeatures.length, 'label features');
+        
+        const labelsGeoJson = {
+            type: 'FeatureCollection',
+            features: labelFeatures
+        };
+        
+        // Add or update source
+        if (!map.getSource('tourism-labels')) {
+            map.addSource('tourism-labels', {
+                type: 'geojson',
+                data: labelsGeoJson
+            });
+        } else {
+            map.getSource('tourism-labels').setData(labelsGeoJson);
+        }
+        
+        // Remove existing layer if it exists
+        if (map.getLayer('tourism-labels')) {
+            map.removeLayer('tourism-labels');
+        }
+        
+        // Find where to place labels (above choropleth, below points)
+        let beforeId;
+        if (map.getLayer('whc001-layer')) {
+            beforeId = 'whc001-layer';
+        }
+        
+        // Add labels layer
+        map.addLayer({
+            id: 'tourism-labels',
+            type: 'symbol',
+            source: 'tourism-labels',
+            layout: {
+                visibility: 'visible',
+                'text-field': ['get', 'label'],
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-size': 12,
+                'text-anchor': 'center',
+                'text-allow-overlap': false,
+                'text-ignore-placement': false
+            },
+            paint: {
+                'text-color': '#ffffff',
+                'text-halo-color': '#000000',
+                'text-halo-width': 1.5
+            }
+        }, beforeId);
+        
+        console.log('[DEBUG] Tourism labels layer created');
+        
+    } catch (error) {
+        console.error('[DEBUG] Error creating tourism labels:', error);
+    }
+}
+
+// Calculate centroid of a polygon
+function calculateCentroid(geometry) {
+    if (!geometry) return null;
+    
+    if (geometry.type === 'Point') {
+        return geometry.coordinates;
+    }
+    
+    if (geometry.type === 'Polygon') {
+        return getPolygonCenter(geometry.coordinates[0]);
+    }
+    
+    if (geometry.type === 'MultiPolygon') {
+        // Use the largest polygon's centroid
+        let largestArea = 0;
+        let largestCoords = null;
+        
+        geometry.coordinates.forEach(polygon => {
+            const area = calculatePolygonArea(polygon[0]);
+            if (area > largestArea) {
+                largestArea = area;
+                largestCoords = polygon[0];
+            }
+        });
+        
+        return largestCoords ? getPolygonCenter(largestCoords) : null;
+    }
+    
+    return null;
+}
+
+// Get polygon center using bounding box
+function getPolygonCenter(coordinates) {
+    if (!coordinates || coordinates.length === 0) return null;
+    
+    let minLng = Infinity, maxLng = -Infinity;
+    let minLat = Infinity, maxLat = -Infinity;
+    
+    coordinates.forEach(coord => {
+        minLng = Math.min(minLng, coord[0]);
+        maxLng = Math.max(maxLng, coord[0]);
+        minLat = Math.min(minLat, coord[1]);
+        maxLat = Math.max(maxLat, coord[1]);
+    });
+    
+    return [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
+}
+
+// Calculate polygon area (simplified)
+function calculatePolygonArea(coordinates) {
+    if (!coordinates || coordinates.length < 3) return 0;
+    
+    let area = 0;
+    for (let i = 0; i < coordinates.length - 1; i++) {
+        area += coordinates[i][0] * coordinates[i + 1][1];
+        area -= coordinates[i + 1][0] * coordinates[i][1];
+    }
+    return Math.abs(area / 2);
+}
+
+// Show Tourism Layers
+function showTourismLayers() {
+    console.log('[DEBUG] showTourismLayers called');
+    
+    if (!map || !map.loaded()) {
+        console.warn('[DEBUG] Map not ready');
+        return;
+    }
+    
+    if (!map.isStyleLoaded()) {
+        map.once('style.load', () => showTourismLayers());
+        return;
+    }
+    
+    if (map.getLayer('tourism-choropleth')) {
+        map.setLayoutProperty('tourism-choropleth', 'visibility', 'visible');
+    } else if (tourismBoundaries) {
+        createTourismChoroplethMap();
+    } else {
+        loadTourismData().then(() => {
+            if (tourismBoundaries) {
+                createTourismChoroplethMap();
+                createTourismLabelsLayer();
+            }
+        });
+    }
+    
+    if (map.getLayer('tourism-labels')) {
+        map.setLayoutProperty('tourism-labels', 'visibility', 'visible');
+    } else if (tourismBoundaries) {
+        createTourismLabelsLayer();
+    }
+}
+
+// Hide Tourism Layers
+function hideTourismLayers() {
+    if (!map || !map.loaded()) return;
+    
+    if (map.getLayer('tourism-choropleth')) {
+        map.setLayoutProperty('tourism-choropleth', 'visibility', 'none');
+    }
+    
+    if (map.getLayer('tourism-labels')) {
+        map.setLayoutProperty('tourism-labels', 'visibility', 'none');
+    }
+}
+
+// Initialize Tourism Control
+function initializeTourismControl() {
+    const toggleBtn = document.getElementById('tourism-toggle-btn');
+    const controlsContent = document.getElementById('tourism-controls-content');
+    const tourismControl = document.getElementById('tourism-control');
+    
+    if (!toggleBtn || !controlsContent || !tourismControl) {
+        console.log('[DEBUG] Tourism control elements not found');
+        return;
+    }
+    
+    console.log('[DEBUG] Initializing tourism control');
+    
+    toggleBtn.addEventListener('click', (e) => {
+        // Check if clicking on expand icon
+        if (e.target.closest('.expand-icon')) {
+            const isExpanded = tourismControl.classList.contains('expanded');
+            if (isExpanded) {
+                tourismControl.classList.remove('expanded');
+                controlsContent.style.display = 'none';
+            } else {
+                tourismControl.classList.add('expanded');
+                controlsContent.style.display = 'flex';
+            }
+            return;
+        }
+        
+        // Toggle active state
+        const isActive = toggleBtn.classList.contains('active');
+        if (isActive) {
+            toggleBtn.classList.remove('active');
+            hideTourismLayers();
+        } else {
+            // Turn off temperature button if active
+            const climateToggleBtn = document.getElementById('climate-toggle-btn');
+            if (climateToggleBtn && climateToggleBtn.classList.contains('active')) {
+                climateToggleBtn.classList.remove('active');
+                hideChoroplethLayer();
+            }
+            
+            toggleBtn.classList.add('active');
+            
+            // Load and show tourism layers
+            if (!tourismBoundaries) {
+                loadTourismData().then(() => {
+                    showTourismLayers();
+                });
+            } else {
+                showTourismLayers();
+            }
         }
     });
 }

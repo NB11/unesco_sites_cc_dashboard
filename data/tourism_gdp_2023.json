@@ -1,0 +1,120 @@
+{
+  "title": "Travel and tourism: share of GDP in the EU-27 and the UK 2023",
+  "description": "Share of travel and tourism's total contribution to GDP in European Union member countries (EU-27) and the United Kingdom (UK) in 2023",
+  "year": 2023,
+  "unit": "percent",
+  "countries": [
+    {
+      "country": "Croatia",
+      "value": 25.8
+    },
+    {
+      "country": "Portugal",
+      "value": 19.6
+    },
+    {
+      "country": "Greece",
+      "value": 19.2
+    },
+    {
+      "country": "Spain",
+      "value": 14.5
+    },
+    {
+      "country": "Malta",
+      "value": 13.6
+    },
+    {
+      "country": "Cyprus",
+      "value": 12.9
+    },
+    {
+      "country": "Germany",
+      "value": 11.0
+    },
+    {
+      "country": "Austria",
+      "value": 10.6
+    },
+    {
+      "country": "Italy",
+      "value": 10.5
+    },
+    {
+      "country": "Slovenia",
+      "value": 9.8
+    },
+    {
+      "country": "Netherlands",
+      "value": 9.6
+    },
+    {
+      "country": "Estonia",
+      "value": 9.2
+    },
+    {
+      "country": "France",
+      "value": 8.8
+    },
+    {
+      "country": "United Kingdom",
+      "value": 8.8
+    },
+    {
+      "country": "Luxembourg",
+      "value": 8.5
+    },
+    {
+      "country": "Latvia",
+      "value": 7.5
+    },
+    {
+      "country": "Hungary",
+      "value": 7.4
+    },
+    {
+      "country": "Finland",
+      "value": 7.1
+    },
+    {
+      "country": "Sweden",
+      "value": 7.1
+    },
+    {
+      "country": "Bulgaria",
+      "value": 6.9
+    },
+    {
+      "country": "Denmark",
+      "value": 6.5
+    },
+    {
+      "country": "Romania",
+      "value": 5.6
+    },
+    {
+      "country": "Belgium",
+      "value": 5.5
+    },
+    {
+      "country": "Czechia",
+      "value": 5.5
+    },
+    {
+      "country": "Lithuania",
+      "value": 5.2
+    },
+    {
+      "country": "Slovakia",
+      "value": 4.8
+    },
+    {
+      "country": "Poland",
+      "value": 4.1
+    },
+    {
+      "country": "Ireland",
+      "value": 3.8
+    }
+  ]
+}

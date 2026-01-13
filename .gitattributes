@@ -1,9 +1,0 @@
-# All data files are in regular Git but served via jsDelivr CDN
-# This avoids GitHub Pages deployment timeouts while keeping files accessible
-# Files are served from: https://cdn.jsdelivr.net/gh/NB11/unesco_sites_cc_dashboard@main/data/
-# 
-# data/unesco_sites.parquet - regular Git (served via CDN)
-# data/climate_impact_data.csv - regular Git (served via CDN)
-# data/whc001.csv - regular Git (served via CDN)
-# data/world-administrative-boundaries.geojson - regular Git (served via CDN)
-
